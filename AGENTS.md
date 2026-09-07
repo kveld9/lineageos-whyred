@@ -36,12 +36,13 @@ This project comprises the root orchestration repository and device-specific tre
   - Build graph generation, bootstrap configurations, and compilation tools.
 
 ## 4. Build Continuity & Autonomous Fixes
-When tasked with compilation:
-1. Autonomously diagnose build failures from build logs.
-2. Apply minimal reproducible fixes in the proper sub-tree.
-3. Commit each fix with a Conventional Commit in English in that sub-repo.
-4. Push the commit to its corresponding GitHub remote immediately.
-5. Resume compilation until the target artifact (`m bacon` ROM zip) is 100% completed.
+- **Explicit Compilation Authorization**: Never initiate or trigger any compilation process (`mka`, `m bootimage`, `m bacon`, kernel builds, or script-driven builds) unless the user explicitly and directly commands or approves compilation. All investigations, configurations, file changes, and adjustments must remain strictly within source/configuration files without building until explicit user confirmation is given.
+- **When Compilation is Authorized**:
+  1. Autonomously diagnose build failures from build logs.
+  2. Apply minimal reproducible fixes in the proper sub-tree.
+  3. Commit each fix with a Conventional Commit in English in that sub-repo.
+  4. Push the commit to its corresponding GitHub remote immediately.
+  5. Resume compilation until the target artifact (`m bacon` ROM zip or requested image) is 100% completed.
 
 ## 5. Documentation & README Maintenance
 - **Keep README Updated**: Whenever changes occur to repository topology, fork remotes, build procedures, patch levels, partition layouts, or release artifacts, the agent must immediately update `README.md` to keep documentation accurate, complete, and synchronized with the actual codebase state.
