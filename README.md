@@ -139,10 +139,10 @@ This ROM ships with a 100% clean stock unrooted kernel (`boot.img`). If you requ
    fastboot reboot
    ```
 2. **Install KernelSU Next Manager**:
-   - Download the v3.x manager APK (version **v3.3.0**, `versionCode: 33214`, `KernelSU_Next_v3.3.0_33214-release.apk`) from official [KernelSU-Next Releases](https://github.com/KernelSU-Next/KernelSU-Next/releases/tag/v3.3.0).
+   - Download the matching v3.1.0 manager APK (version **v3.1.0**, `versionCode: 33024`, `KernelSU_Next_v3.1.0_33024-release.apk`) from official [KernelSU-Next v3.1.0 Releases](https://github.com/KernelSU-Next/KernelSU-Next/releases/tag/v3.1.0).
    - Install via ADB:
      ```bash
-     adb install -r KernelSU_Next_v3.3.0_33214-release.apk
+     adb install -r KernelSU_Next_v3.1.0_33024-release.apk
      ```
 3. **Verify SuSFS Integration**:
    - Open KernelSU Next Manager. Status will indicate active root and kernel-level mount hiding via SuSFS.
@@ -157,8 +157,8 @@ Whyred (Snapdragon 660) operates on **Linux Kernel 4.19**, which belongs to the 
   - In upstream `KernelSU-Next`, all versions beyond `v3.1.0-legacy-susfs` (such as `v3.2.0-legacy` and legacy `HEAD`) completely eliminated `CONFIG_KSU_SUSFS` and dropped SuSFS integration.
   - In `susfs4ksu`, non-GKI Linux 4.19 is supported only up to **v2.0.0** (newer versions require GKI 6.1+).
   - Therefore, the combination of **KernelSU Next v3.1.0-legacy-susfs** + **SuSFS v2.0.0** is the absolute highest achievable compatibility ceiling for Linux 4.19 non-GKI.
-- **Why Manager v3.3.0 is Required:**
-  KernelSU Next v3 completely replaced the legacy `prctl(0xdeadbeef, ...)` communication channel from v0.x/v1.x with an anonymous-inode file descriptor supercall subsystem (`ksu_install_fd` dispatched via `sys_reboot`). Legacy v1.x managers cannot communicate with v3 drivers. **KernelSU Next Manager v3.3.0** (`versionCode: 33214`) speaks the v3 supercall protocol natively while fully supporting the v3.1.0 driver and SuSFS 2.0.0.
+- **Why Manager v3.1.0 (33024) is Required:**
+  KernelSU Next v3 completely replaced the legacy `prctl(0xdeadbeef, ...)` communication channel from v0.x/v1.x with an anonymous-inode file descriptor supercall subsystem (`ksu_install_fd` dispatched via `sys_reboot`). The exact matching companion app is **KernelSU Next Manager v3.1.0** (`versionCode: 33024`). Newer managers (such as v3.3.0) enforce UAPI version 2 (driver version >= 33188) and trigger UAPI version mismatch warnings when paired with the legacy 33024 driver.
 
 ---
 
