@@ -3,6 +3,9 @@
   <remote name="themuppets" fetch="https://github.com/TheMuppets" />
   <remote name="kveld9" fetch="https://github.com/kveld9" />
 
+  <remove-project name="LineageOS/android_build" />
+  <project name="android_build" path="build/make" remote="kveld9" revision="lineage-21.0" />
+
   <project name="android_device_xiaomi_whyred" path="device/xiaomi/whyred" remote="kveld9" revision="lineage-21" />
   <project name="LineageOS/android_device_xiaomi_sdm660-common" path="device/xiaomi/sdm660-common" remote="github" revision="lineage-21" />
   <project name="android_kernel_xiaomi_sdm660" path="kernel/xiaomi/sdm660" remote="kveld9" revision="lineage-21" />
