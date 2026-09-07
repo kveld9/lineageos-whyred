@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ==============================================================================
-# LineageOS 21.0 - Dedicated KernelSU + SuSFS Boot Image Builder
+# LineageOS 21.0 - Dedicated KernelSU Next + SuSFS Boot Image Builder
 # ==============================================================================
 # Checks out the isolated lineage-21-ksu kernel branch, compiles bootimage,
 # saves out/target/product/whyred/boot-ksu.img, and safely restores stock branch.
@@ -15,7 +15,7 @@ KERNEL_DIR="kernel/xiaomi/sdm660"
 OUT_DIR="${OUT_DIR:-out/target/product/whyred}"
 
 echo "=========================================================="
-echo " Building KernelSU + SuSFS Boot Image for whyred"
+echo " Building KernelSU Next + SuSFS Boot Image for whyred"
 echo "=========================================================="
 
 if [ ! -d "${KERNEL_DIR}" ]; then

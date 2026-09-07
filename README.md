@@ -73,7 +73,7 @@ Available build and automation workflows:
   ./build_whyred.sh --build
   # Or manually: mka bacon
   ```
-- **Build KernelSU + SuSFS Boot Image**:
+- **Build KernelSU Next + SuSFS Boot Image**:
   ```bash
   ./build_ksu_boot.sh
   # Or: ./build_whyred.sh --build-ksu
@@ -91,7 +91,7 @@ Available build and automation workflows:
 Built artifacts generated in `out/target/product/whyred/`:
 - `lineage-21.0-*-UNOFFICIAL-whyred.zip` (Flashable ROM zip signed with private `release-keys`)
 - `boot.img` (Stock Clean Kernel 4.19 + Ramdisk)
-- `boot-ksu.img` (KernelSU v1.0.1 + SuSFS v1.5.5 Kernel + Ramdisk)
+- `boot-ksu.img` (KernelSU Next + SuSFS v1.5.11 Kernel + Ramdisk)
 - `recovery.img` (LineageOS 21 Recovery)
 - `sha256sums.txt` (Cryptographic SHA-256 digests for all assets)
 
@@ -128,6 +128,24 @@ Due to the architecture of eMMC 5.1 storage, **F2FS (Flash-Friendly File System)
      - Perform **Format Data** (type `yes` to confirm).
 6. **Reboot to System**:
    - Reboot device into Android 14. First boot will take 2–3 minutes to initialize encryption keys.
+
+### Optional: Root with KernelSU Next + SuSFS
+
+This ROM ships with a 100% clean stock unrooted kernel (`boot.img`). If you require root access with clean Play Integrity / SafetyNet pass:
+
+1. **Flash KernelSU Next Boot Image**:
+   ```bash
+   fastboot flash boot boot-ksu.img
+   fastboot reboot
+   ```
+2. **Install KernelSU Next Manager**:
+   - Download the latest APK from the official [KernelSU-Next GitHub Releases](https://github.com/KernelSU-Next/KernelSU-Next/releases).
+   - Install via ADB or file manager:
+     ```bash
+     adb install -r KernelSU_Next_*.apk
+     ```
+3. **Verify SuSFS Integration**:
+   - Open KernelSU Next Manager. Status will indicate active root and kernel-level mount hiding via SuSFS.
 
 ---
 

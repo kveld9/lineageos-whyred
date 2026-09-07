@@ -206,14 +206,15 @@ $(cat "${CHECKSUMS_FILE}")
 4. **Reboot to System**:
    - Select **Reboot system now**.
 
-### Root via KernelSU + SuSFS (Optional)
+### Root via KernelSU Next + SuSFS (Optional)
 If you require root with clean Play Integrity / SafetyNet pass:
-1. Flash or boot the KernelSU kernel image:
+1. Flash or boot the KernelSU Next kernel image:
    \`\`\`bash
    fastboot flash boot boot-ksu.img
    fastboot reboot
    \`\`\`
-2. Install the latest official **KernelSU Manager** APK.
+2. Download and install the latest **KernelSU Next Manager** APK from GitHub:
+   - Releases: https://github.com/KernelSU-Next/KernelSU-Next/releases
 
 EOF
 
