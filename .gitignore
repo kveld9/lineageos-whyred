@@ -1,0 +1,34 @@
+# Build output and repo tool internals
+/.repo/
+/out/
+
+# AOSP / LineageOS subtrees managed by repo
+/android/
+/art/
+/bionic/
+/bootable/
+/build/
+/cts/
+/dalvik/
+/developers/
+/development/
+/device/
+/external/
+/frameworks/
+/hardware/
+/kernel/
+/libcore/
+/libnativehelper/
+/lineage/
+/lineage-sdk/
+/packages/
+/pdk/
+/platform_testing/
+/prebuilts/
+/sdk/
+/system/
+/test/
+/toolchain/
+/tools/
+/trusty/
+/vendor/

@@ -1,0 +1,22 @@
+{
+  "java.enabled": false,
+  "java.import.gradle.enabled": false,
+  "java.import.maven.enabled": false,
+  "java.autobuild.enabled": false,
+  "java.server.launchMode": "off",
+  "java.trace.server": "off",
+  "files.watcherExclude": {
+    "**/.git/**": true,
+    "**/.repo/**": true,
+    "**/out/**": true,
+    "**/.gradle/**": true
+  },
+  "search.exclude": {
+    "**/out": true,
+    "**/.repo": true,
+    "**/.gradle": true
+  },
+  "files.exclude": {
+    "**/.repo": true
+  }
+}
