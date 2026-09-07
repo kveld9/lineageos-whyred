@@ -67,7 +67,12 @@ mka bootimage
 
 if [ -f "${OUT_DIR}/boot.img" ]; then
     cp -v "${OUT_DIR}/boot.img" "${OUT_DIR}/boot-ksu.img"
-    if [ -f "${OUT_DIR}/obj/KERNEL_OBJ/drivers/staging/qcacld-3.0/wlan.ko" ]; then
+    STRIPPED_WLAN=$(find "${OUT_DIR}/obj/PACKAGING/kernel_modules_intermediates" -name "wlan.ko" 2>/dev/null | head -n 1)
+    if [ -n "${STRIPPED_WLAN}" ] && [ -f "${STRIPPED_WLAN}" ]; then
+        mkdir -p "${OUT_DIR}/vendor/lib/modules"
+        cp -vf "${STRIPPED_WLAN}" "${OUT_DIR}/vendor/lib/modules/wlan.ko"
+        echo "Updated ${OUT_DIR}/vendor/lib/modules/wlan.ko (stripped, $(ls -lh "${OUT_DIR}/vendor/lib/modules/wlan.ko" | awk '{print $5}'))"
+    elif [ -f "${OUT_DIR}/obj/KERNEL_OBJ/drivers/staging/qcacld-3.0/wlan.ko" ]; then
         mkdir -p "${OUT_DIR}/vendor/lib/modules"
         cp -vf "${OUT_DIR}/obj/KERNEL_OBJ/drivers/staging/qcacld-3.0/wlan.ko" "${OUT_DIR}/vendor/lib/modules/wlan.ko"
         echo "Updated ${OUT_DIR}/vendor/lib/modules/wlan.ko"
