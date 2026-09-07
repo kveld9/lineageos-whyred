@@ -27,7 +27,8 @@ This project comprises the root orchestration repository and device-specific tre
   - Remote: `git@github.com:kveld9/android_kernel_xiaomi_sdm660.git` (`lineage-21`)
   - Scope: Linux kernel 4.19 source, defconfigs, drivers, and device tree source (DTS).
 - **Common Device Tree** (`device/xiaomi/sdm660-common`):
-  - Shared SDM660 HAL definitions and configs.
+  - Remote: `git@github.com:kveld9/android_device_xiaomi_sdm660-common.git` (`lineage-21`)
+  - Scope: Shared SDM660 HAL definitions, init scripts, and power configs.
 - **Build System** (`build/make`):
   - Remote: `git@github.com:kveld9/android_build.git` (`lineage-21.0`)
   - Scope: Core build system logic, target packaging rules, and release tools.
