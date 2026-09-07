@@ -1,6 +1,8 @@
 # Build output and repo tool internals
 /.repo/
 /out/
+*.zip
+*.img
 
 # AOSP / LineageOS subtrees managed by repo
 /android/
