@@ -75,21 +75,35 @@ Built artifacts will be generated in `out/target/product/whyred/`:
 
 ## Flashing Instructions
 
-1. Reboot device to Fastboot mode:
+### Recommended Filesystem for `/data` (F2FS)
+This ROM supports both **F2FS** and **EXT4** for `/data` (`/userdata`). 
+Due to the architecture of eMMC 5.1 storage, **F2FS (Flash-Friendly File System)** is strongly recommended for significantly better random I/O performance and reduced database write latency.
+
+### Step-by-Step Installation Guide
+
+1. **Reboot to Fastboot Mode**:
    ```bash
    adb reboot bootloader
    ```
-2. Flash LineageOS recovery (or compatible FBE recovery):
+2. **Flash Recovery Image**:
    ```bash
    fastboot flash recovery recovery.img
    fastboot reboot recovery
    ```
-3. In recovery, select **Factory Reset** > **Format Data** (mandatory for FBE migration).
-4. Sideload the ROM zip:
+3. **Flash ROM Package**:
+   - In Recovery, select **Apply Update** > **Apply from ADB**:
    ```bash
    adb sideload lineage-21.0-*-UNOFFICIAL-whyred.zip
    ```
-5. Reboot to system.
+4. **Reboot Recovery**:
+   - In Recovery, select **Advanced** > **Reboot to Recovery** (ensures all newly flashed partition tables and kernel flags reload).
+5. **Format `/data` to F2FS** (Mandatory for FBE migration and maximum I/O performance):
+   - In Recovery (OrangeFox / TWRP / Lineage Recovery):
+     - Go to **Wipe / Manage Partitions** > select **Data**.
+     - Choose **Change File System** > select **F2FS**.
+     - Perform **Format Data** (type `yes` to confirm).
+6. **Reboot to System**:
+   - Reboot device into Android 14. First boot will take 2–3 minutes to initialize encryption keys.
 
 ---
 
