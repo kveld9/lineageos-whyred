@@ -31,12 +31,13 @@ This repository orchestrates the build environment, local manifests, documentati
 | **Build System** | `build/make` | LineageOS 21 | [`kveld9/android_build`](https://github.com/kveld9/android_build) (`lineage-21.0`) |
 
 ### Key Technical Details
-- **Android Version:** 14 (LineageOS 21.0, `userdebug`)
+- **Android Version:** 14 (LineageOS 21.0, `user` / `release-keys`)
 - **Kernel Version:** Linux 4.19.325 (`Image.gz-dtb`)
 - **Platform Security Patch:** August 2026 (`2026-08-01`)
 - **Vendor Patch Level:** November 2018 (`2018-11-01`, Qualcomm/Xiaomi proprietary blobs)
 - **Partition Layout:** Standard static partitions (non-dynamic, original eMMC partition table)
 - **Encryption:** File-Based Encryption (FBE / ICE, `fileencryption=ice`)
+- **Signing & Keys:** Private RSA release keys in `certs/` (`releasekey`, `platform`, `shared`, `media`, `networkstack`, `bluetooth`, `sdk_sandbox`, `nfc`). Eliminates `test-keys` / public-key warnings in Trust and passes Play Integrity CTS profile.
 
 ---
 
@@ -61,13 +62,18 @@ repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune -j$(nproc)
 
 ### Compiling
 ```bash
+./build_whyred.sh
+mka bacon
+```
+Or manually:
+```bash
 source build/envsetup.sh
-breakfast whyred
-m bacon
+breakfast whyred user
+mka bacon
 ```
 
 Built artifacts will be generated in `out/target/product/whyred/`:
-- `lineage-21.0-*-UNOFFICIAL-whyred.zip` (Flashable ROM zip)
+- `lineage-21.0-*-UNOFFICIAL-whyred.zip` (Flashable ROM zip signed with `release-keys`)
 - `boot.img` (Kernel 4.19 + Ramdisk)
 - `recovery.img` (LineageOS Recovery)
 
