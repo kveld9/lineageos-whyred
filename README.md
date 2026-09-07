@@ -139,10 +139,10 @@ This ROM ships with a 100% clean stock unrooted kernel (`boot.img`). If you requ
    fastboot reboot
    ```
 2. **Install KernelSU Next Manager**:
-   - Download the latest APK from the official [KernelSU-Next GitHub Releases](https://github.com/KernelSU-Next/KernelSU-Next/releases).
-   - Install via ADB or file manager:
+   - Download the v3.x manager APK (version **v3.3.0**, `versionCode: 33214`, `KernelSU_Next_v3.3.0_33214-release.apk`) from official [KernelSU-Next Releases](https://github.com/KernelSU-Next/KernelSU-Next/releases/tag/v3.3.0). Older v1.x managers do not support the Next v3 supercall subsystem.
+   - Install via ADB:
      ```bash
-     adb install -r KernelSU_Next_*.apk
+     adb install -r KernelSU_Next_v3.3.0_33214-release.apk
      ```
 3. **Verify SuSFS Integration**:
    - Open KernelSU Next Manager. Status will indicate active root and kernel-level mount hiding via SuSFS.
