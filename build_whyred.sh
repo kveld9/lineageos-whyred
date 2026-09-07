@@ -36,11 +36,46 @@ source build/envsetup.sh
 # Configure target device as a stable user release
 breakfast whyred user
 
-echo ""
-echo "=========================================================="
-echo " Environment is ready for LineageOS 21 (Android 14) user release!"
-echo " Target: lineage_whyred-user (signed with private release-keys)"
-echo " To start compiling, run:"
-echo "   mka bacon"
-echo "=========================================================="
+ACTION="${1:-help}"
+
+case "${ACTION}" in
+    --build)
+        echo "Starting LineageOS 21.0 ROM build..."
+        mka bacon
+        ;;
+    --build-ksu)
+        echo "Building dedicated KernelSU boot image..."
+        ./build_ksu_boot.sh
+        ;;
+    --publish)
+        shift 1 || true
+        ./publish_release.sh "$@"
+        ;;
+    --all)
+        echo "=========================================================="
+        echo " Full Automated Pipeline: ROM -> KSU Kernel -> Release"
+        echo "=========================================================="
+        shift 1 || true
+        echo "[1/3] Building clean LineageOS 21.0 ROM (user release)..."
+        mka bacon
+        echo "[2/3] Building KernelSU + SuSFS boot image..."
+        ./build_ksu_boot.sh
+        echo "[3/3] Generating changelogs, checksums & publishing release..."
+        ./publish_release.sh --yes "$@"
+        ;;
+    *)
+        echo ""
+        echo "=========================================================="
+        echo " Environment is ready for LineageOS 21 (Android 14) user release!"
+        echo " Target: lineage_whyred-user (signed with private release-keys)"
+        echo ""
+        echo " Available options:"
+        echo "   mka bacon                 (Compile ROM manually)"
+        echo "   ./build_whyred.sh --build       (Run mka bacon)"
+        echo "   ./build_whyred.sh --build-ksu   (Build boot-ksu.img)"
+        echo "   ./build_whyred.sh --publish     (Publish release to GitHub)"
+        echo "   ./build_whyred.sh --all         (Build ROM + KSU boot + Auto-publish)"
+        echo "=========================================================="
+        ;;
+esac
 

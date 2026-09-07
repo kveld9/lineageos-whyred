@@ -60,22 +60,40 @@ cp local_manifests/whyred.xml .repo/local_manifests/whyred.xml
 repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune -j$(nproc)
 ```
 
-### Compiling
+### Compiling & Automated Pipelines
+
+Prepare the environment:
 ```bash
 ./build_whyred.sh
-mka bacon
-```
-Or manually:
-```bash
-source build/envsetup.sh
-breakfast whyred user
-mka bacon
 ```
 
-Built artifacts will be generated in `out/target/product/whyred/`:
-- `lineage-21.0-*-UNOFFICIAL-whyred.zip` (Flashable ROM zip signed with `release-keys`)
-- `boot.img` (Kernel 4.19 + Ramdisk)
-- `recovery.img` (LineageOS Recovery)
+Available build and automation workflows:
+- **Compile ROM only**:
+  ```bash
+  ./build_whyred.sh --build
+  # Or manually: mka bacon
+  ```
+- **Build KernelSU + SuSFS Boot Image**:
+  ```bash
+  ./build_ksu_boot.sh
+  # Or: ./build_whyred.sh --build-ksu
+  ```
+- **Publish Release to GitHub**:
+  ```bash
+  ./publish_release.sh
+  # Or dry-run: ./publish_release.sh --dry-run
+  ```
+- **Full End-to-End Pipeline** (Build ROM -> Build KSU Boot -> Generate Checksums & Changelog -> Publish to GitHub):
+  ```bash
+  ./build_whyred.sh --all
+  ```
+
+Built artifacts generated in `out/target/product/whyred/`:
+- `lineage-21.0-*-UNOFFICIAL-whyred.zip` (Flashable ROM zip signed with private `release-keys`)
+- `boot.img` (Stock Clean Kernel 4.19 + Ramdisk)
+- `boot-ksu.img` (KernelSU v1.0.1 + SuSFS v1.5.5 Kernel + Ramdisk)
+- `recovery.img` (LineageOS 21 Recovery)
+- `sha256sums.txt` (Cryptographic SHA-256 digests for all assets)
 
 ---
 
