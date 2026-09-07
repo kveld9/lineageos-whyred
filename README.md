@@ -139,13 +139,26 @@ This ROM ships with a 100% clean stock unrooted kernel (`boot.img`). If you requ
    fastboot reboot
    ```
 2. **Install KernelSU Next Manager**:
-   - Download the v3.x manager APK (version **v3.3.0**, `versionCode: 33214`, `KernelSU_Next_v3.3.0_33214-release.apk`) from official [KernelSU-Next Releases](https://github.com/KernelSU-Next/KernelSU-Next/releases/tag/v3.3.0). Older v1.x managers do not support the Next v3 supercall subsystem.
+   - Download the v3.x manager APK (version **v3.3.0**, `versionCode: 33214`, `KernelSU_Next_v3.3.0_33214-release.apk`) from official [KernelSU-Next Releases](https://github.com/KernelSU-Next/KernelSU-Next/releases/tag/v3.3.0).
    - Install via ADB:
      ```bash
      adb install -r KernelSU_Next_v3.3.0_33214-release.apk
      ```
 3. **Verify SuSFS Integration**:
    - Open KernelSU Next Manager. Status will indicate active root and kernel-level mount hiding via SuSFS.
+
+#### Non-GKI Architecture & Compatibility Ceiling (Linux 4.19)
+
+Whyred (Snapdragon 660) operates on **Linux Kernel 4.19**, which belongs to the legacy **non-GKI** (Generic Kernel Image) Android architecture:
+
+- **Non-GKI vs. GKI 2.0:**
+  Starting in Android 12 (Linux 5.10 / 6.1+), Google enforces GKI with standardized KMI (Kernel Module Interface). Modern SuSFS (v2.1+) and recent root frameworks rely heavily on GKI runtime live-patching and modern eBPF/Kprobe facilities. In non-GKI 4.19 kernels, SuSFS must be statically integrated at compile-time using de-inlined manual hooks across core subsystems (VFS in `fs/namei.c`, `fs/readdir.c`, `fs/namespace.c`, reboot dispatcher in `kernel/reboot.c`, and SELinux).
+- **The Absolute Compatibility Ceiling:**
+  - In upstream `KernelSU-Next`, all versions beyond `v3.1.0-legacy-susfs` (such as `v3.2.0-legacy` and legacy `HEAD`) completely eliminated `CONFIG_KSU_SUSFS` and dropped SuSFS integration.
+  - In `susfs4ksu`, non-GKI Linux 4.19 is supported only up to **v2.0.0** (newer versions require GKI 6.1+).
+  - Therefore, the combination of **KernelSU Next v3.1.0-legacy-susfs** + **SuSFS v2.0.0** is the absolute highest achievable compatibility ceiling for Linux 4.19 non-GKI.
+- **Why Manager v3.3.0 is Required:**
+  KernelSU Next v3 completely replaced the legacy `prctl(0xdeadbeef, ...)` communication channel from v0.x/v1.x with an anonymous-inode file descriptor supercall subsystem (`ksu_install_fd` dispatched via `sys_reboot`). Legacy v1.x managers cannot communicate with v3 drivers. **KernelSU Next Manager v3.3.0** (`versionCode: 33214`) speaks the v3 supercall protocol natively while fully supporting the v3.1.0 driver and SuSFS 2.0.0.
 
 ---
 
