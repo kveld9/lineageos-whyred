@@ -18,5 +18,9 @@
   },
   "files.exclude": {
     "**/.repo": true
+  },
+  "go.goroot": "${workspaceFolder}/prebuilts/go/linux-x86",
+  "go.alternateTools": {
+    "go": "${workspaceFolder}/prebuilts/go/linux-x86/bin/go"
   }
 }
