@@ -281,3 +281,26 @@ The following core applications must remain installed unless explicit replacemen
 ## Releases & Downloads
 Flashable builds and recovery images are available under [GitHub Releases](https://github.com/kveld9/lineageos-whyred/releases).
 
+---
+
+## Credits & Acknowledgements
+
+This project builds upon the work of the open-source Android, LineageOS, and Linux kernel communities:
+
+- **[The LineageOS Project](https://github.com/LineageOS)**: Base Android 14 operating system distribution and legacy device framework.
+- **[Android Open Source Project (AOSP)](https://source.android.com/)**: Foundational operating system code.
+- **[Santhosh (user-why-red / San-Kernel)](https://github.com/user-why-red)**: Linux 4.19 scheduler tuning, SDM660 manual KernelSU hooks, and driver fixes.
+- **[KernelSU-Next Team](https://github.com/KernelSU-Next/KernelSU-Next)** & **[Weishu (KernelSU)](https://github.com/tiann/KernelSU)**: Kernel-level root privilege framework.
+- **[simonpunk (susfs4ksu)](https://github.com/simonpunk/susfs4ksu)**: SuSFS (Suspicious File System) kernel mount isolation framework.
+- **Xiaomi Inc. & Qualcomm Technologies**: Device hardware design and board support package.
+
+---
+
+## License & Legal Notices
+
+- **Orchestration & Tools**: Licensed under the [Apache License, Version 2.0](LICENSE).
+- **Linux Kernel Source**: Licensed under the [GNU General Public License v2 (GPL-2.0)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html).
+- **Trademarks**: "Xiaomi", "Redmi", "whyred", "Qualcomm", "Snapdragon", and "Android" are trademarks of their respective copyright holders. This project is an independent community distribution and is not affiliated with, endorsed by, or sponsored by Xiaomi Inc., Qualcomm Technologies, or Google LLC.
+- **Proprietary Blobs**: Hardware blobs in vendor submodules are extracted from official factory firmware and maintained solely for device interoperability under fair use principles.
+- **Disclaimer**: Installation of third-party operating systems and custom kernels is performed at your own risk. The author and contributors accept no liability for device damage, data loss, or system instability.
+
