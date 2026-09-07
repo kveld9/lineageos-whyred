@@ -26,7 +26,7 @@ This repository orchestrates the build environment, local manifests, documentati
 | **Device Tree** | `device/xiaomi/whyred` | LineageOS 20 | [`kveld9/android_device_xiaomi_whyred`](https://github.com/kveld9/android_device_xiaomi_whyred) (`lineage-21`) |
 | **Vendor Blobs** | `vendor/xiaomi/whyred` | TheMuppets 20 | [`kveld9/proprietary_vendor_xiaomi_whyred`](https://github.com/kveld9/proprietary_vendor_xiaomi_whyred) (`lineage-21`) |
 | **Kernel Source** | `kernel/xiaomi/sdm660` | LineageOS 21 | [`kveld9/android_kernel_xiaomi_sdm660`](https://github.com/kveld9/android_kernel_xiaomi_sdm660) (`lineage-21`) |
-| **Common Device Tree** | `device/xiaomi/sdm660-common` | LineageOS 21 | Upstream (`lineage-21`) |
+| **Common Device Tree** | `device/xiaomi/sdm660-common` | LineageOS 21 | [`kveld9/android_device_xiaomi_sdm660-common`](https://github.com/kveld9/android_device_xiaomi_sdm660-common) (`lineage-21`) |
 | **Common Vendor Tree** | `vendor/xiaomi/sdm660-common` | TheMuppets 21 | Upstream (`lineage-21`) |
 | **Build System** | `build/make` | LineageOS 21 | [`kveld9/android_build`](https://github.com/kveld9/android_build) (`lineage-21.0`) |
 
