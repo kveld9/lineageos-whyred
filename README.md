@@ -91,7 +91,7 @@ Available build and automation workflows:
 Built artifacts generated in `out/target/product/whyred/`:
 - `lineage-21.0-*-UNOFFICIAL-whyred.zip` (Flashable ROM zip signed with private `release-keys`)
 - `boot.img` (Stock Clean Kernel 4.19 + Ramdisk)
-- `boot-ksu.img` (KernelSU Next + SuSFS v1.5.11 Kernel + Ramdisk)
+- `boot-ksu.img` (KernelSU Next v3.1.0-legacy-susfs + SuSFS v2.0.0 Kernel + Ramdisk)
 - `recovery.img` (LineageOS 21 Recovery)
 - `sha256sums.txt` (Cryptographic SHA-256 digests for all assets)
 
