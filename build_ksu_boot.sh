@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eo pipefail
 
 # ==============================================================================
 # LineageOS 21.0 - Dedicated KernelSU Next + SuSFS Boot Image Builder
@@ -26,11 +26,31 @@ fi
 CURRENT_BRANCH=$(git -C "${KERNEL_DIR}" branch --show-current)
 echo "Current kernel branch: ${CURRENT_BRANCH}"
 
-# Guarantee safe return to original branch on exit
+# Ensure ccache and resource limits
+export USE_CCACHE=1
+export CCACHE_EXEC=$(which ccache)
+export CCACHE_DIR="${HOME}/.ccache"
+export GOMEMLIMIT=16GiB
+export GOMAXPROCS=8
+
+# Backup stock boot.img if present
+if [ -f "${OUT_DIR}/boot.img" ]; then
+    echo "Backing up stock boot.img to boot-stock.img..."
+    cp -f "${OUT_DIR}/boot.img" "${OUT_DIR}/boot-stock.img"
+fi
+
+# Clean prior kernel binary and intermediate config to force fresh compilation of KSU kernel
+rm -rf "${OUT_DIR}/obj/KERNEL_OBJ" "${OUT_DIR}/kernel" "${OUT_DIR}/boot.img"
+
+# Guarantee safe return to original branch and restore stock boot.img on exit
 cleanup() {
     local exit_code=$?
     echo "Restoring kernel tree to '${CURRENT_BRANCH}'..."
     git -C "${KERNEL_DIR}" checkout "${CURRENT_BRANCH}" >/dev/null 2>&1 || true
+    if [ -f "${OUT_DIR}/boot-stock.img" ]; then
+        cp -f "${OUT_DIR}/boot-stock.img" "${OUT_DIR}/boot.img"
+        rm -f "${OUT_DIR}/boot-stock.img"
+    fi
     exit ${exit_code}
 }
 trap cleanup EXIT INT TERM
@@ -42,7 +62,7 @@ git -C "${KERNEL_DIR}" checkout lineage-21-ksu
 source build/envsetup.sh
 breakfast whyred user
 
-echo "Compiling bootimage (KernelSU + SuSFS)..."
+echo "Compiling bootimage (KernelSU Next + SuSFS)..."
 mka bootimage
 
 if [ -f "${OUT_DIR}/boot.img" ]; then
