@@ -1,22 +1,109 @@
 # Autonomous Engineering & Repository Tracking Protocol
 
-## 1. Core Mandate
-All modifications, fixes, and configuration changes across this project and its sub-repositories must be tracked, committed atomically, and immediately pushed to remote Git repositories.
-- **Commit Immediately**: No uncommitted modifications should remain in the working tree once verified.
-- **Push Immediately**: Every committed change must be pushed to its corresponding remote (`origin`) in the root repository or respective personal fork (`kveld9/*`).
+## 1. Operational Pipeline
+Every authorized modification or fix must strictly execute through the following operational pipeline:
+**Scope Lock → State Inspection → Risk Gate → Minimal Change → Validation → Atomic Commit → Push Verification → Documentation Sync**
 
-## 2. Commit & Push Standards
-- **Conventional Commits**: Every commit must strictly follow Conventional Commits specification (e.g., `fix(kernel): ...`, `build(soong): ...`, `fix(device): ...`, `chore(manifest): ...`, `docs: ...`).
-- **Language**: All commit messages, documentation, code comments, and technical artifacts must be written in English.
+---
+
+## 2. Scope Lock
+Before modifying any file across the codebase:
+- Identify the explicit user-requested objective.
+- Identify target repositories, affected components, and files.
+- Formulate the expected behavioral change.
+- **Do not expand scope opportunistically**: If an adjacent defect or cleanup opportunity is discovered:
+  - Record the defect.
+  - Do not fix it in the current atomic unit.
+  - Continue only if the user explicitly authorizes expanding scope.
+
+---
+
+## 3. Working Tree & State Inspection
+- **Inspect Before Modifying**: Run `git status` in target repositories to identify pre-existing working tree state before touching any file.
+- **Protect Pre-existing Changes**: Never modify, reset, revert, stash, amend, or commit changes that were not created by the current task unless explicitly authorized.
+- **Verified Changes Discipline**: No verified change may remain uncommitted. Never discard, reset, stash, or overwrite unrelated user changes. Unverified experimental modifications must remain isolated.
+
+---
+
+## 4. Risk Gate & Prohibited Operations
+Require explicit user authorization before:
+- Deleting source files.
+- Adding, changing, or deleting Git repository remotes.
+- Switching branches or altering tracking branches.
+- Force-pushing (`git push -f`) or rewriting Git history.
+- Modifying proprietary blobs in vendor trees.
+- Altering partition layouts, block sizes, or storage mount points.
+- Modifying release signing configurations or cryptographic keys.
+- Changing boot, recovery, or vendor HAL interfaces.
+- Modifying security-sensitive kernel configurations, drivers, or SELinux policies.
+- Performing destructive repository cleanup.
+- Initiating any compilation process when not explicitly authorized.
+
+### Strict Prohibition on Destructive Git Commands
+Never run any of the following commands without explicit user authorization:
+- `git reset --hard`
+- `git clean -fdx` (or any destructive clean in an Android / LineageOS tree)
+- `git checkout -- <files>`
+- `git restore <files>`
+- `git rebase`
+- `git commit --amend`
+
+---
+
+## 5. Source Tree vs Generated Artifacts (`out/`)
+- **`out/` is Not Source-of-Truth**: Generated build outputs under `out/` are ephemeral artifacts and must never be committed or treated as the source of truth.
+- **Never Patch Generated Files**: Do not modify generated files (e.g., generated `.config`, `autoconf.h`, Soong/Ninja intermediaries, or unpacked ramdisks) to fix source-level issues. Trace every defect back to its original source or configuration file.
+
+---
+
+## 6. Kernel & Device Tree Separation
+- **Kernel Isolation**: Linux kernel 4.19 driver, subsystem, defconfig, and core architecture changes belong exclusively to `kernel/xiaomi/sdm660`.
+- **DTS Classification**: Device-specific Device Tree Source (DTS) modifications must be classified carefully before editing (kernel DTS in `kernel/xiaomi/sdm660/arch/arm64/boot/dts/` vs device tree configurations in `device/xiaomi/whyred`).
+- **No Duplicate Fixes**: Never duplicate a fix across kernel and device trees without concrete evidence that both require independent changes.
+
+---
+
+## 7. Compilation Protection & Failure Protocol
+- **Strict Prohibition on Unauthorized Builds**: Never initiate or trigger any compilation process (`mka`, `m bootimage`, `m bacon`, kernel builds, or script-driven builds) unless the user explicitly and directly commands or approves compilation.
+- **Indirect Compilation Guard**: Compilation includes any command that may invoke Soong, Ninja, Make, Gradle, Kati, or kernel build systems indirectly. Do not run build scripts merely to inspect their behavior or configuration.
+- **Build Failure Handling**: When compilation is explicitly authorized:
+  1. Autonomously diagnose build failures from logs.
+  2. Apply minimal reproducible fixes in the proper sub-tree.
+  3. Continue through recoverable, deterministic failures.
+  4. **Avoid Infinite Loops**: Immediately stop and report if a failure is external (toolchain corruption, network failure, missing proprietary blob, disk space/quota exhaustion), non-deterministic, introduces destructive risk, or requires a design decision outside the repository.
+
+---
+
+## 8. Commit & Push Standards
+- **Conventional Commits**: Every commit must strictly follow Conventional Commits specification in English (e.g., `fix(kernel): ...`, `build(soong): ...`, `fix(device): ...`, `chore(manifest): ...`, `docs: ...`).
 - **No AI Attribution**: Never include `Co-Authored-By`, assistant identifiers, or any AI generation disclosures in commit messages, pull requests, or repository metadata.
-- **Atomic Commits**: Separate commits strictly by concern and sub-repository. Do not mix kernel driver fixes with device tree changes or root scripts.
-- **Branch Synchronization**: Push to the active tracking branch (`main` for root, `lineage-21` for forks and device trees). If a modified repository lacks a personal remote, fork it to `kveld9`, set the remote, and push.
+- **Atomic Commits**: Separate commits strictly by concern and sub-repository. Never combine kernel driver changes with device tree or root orchestration changes.
+- **Pre-Commit Inspection (No Blind Commits)**:
+  Before committing:
+  1. Run `git status`.
+  2. Inspect the complete staged diff (`git diff --staged`).
+  3. Verify that only intended files are staged.
+  4. Run non-compilation validation (syntax checks, lints) when available.
+  5. Commit only when the staged diff matches the intended task unit.
+- **Push Verification**:
+  Before pushing:
+  - Verify current branch (`git branch --show-current`).
+  - Verify remote URL (`git remote -v`).
+  - Verify tracking upstream branch.
+  - Check latest commit (`git log -1 --oneline`).
+  - Push only to the verified tracking branch (`main` for root, `lineage-21` for trees).
+- **Missing Remote Protocol**:
+  If a modified repository lacks the required personal remote (`kveld9/*`):
+  - Stop before pushing.
+  - Report the missing remote to the user.
+  - Request authorization before creating or changing repository remotes.
 
-## 3. Repository Topology & Remote Mapping
-This project comprises the root orchestration repository and device-specific trees linked to user forks:
+---
+
+## 9. Repository Topology & Remote Mapping
 - **Root Repository** (`.`):
   - Remote: `git@github.com:kveld9/lineageos-whyred.git` (`main`)
-  - Scope: Orchestration scripts (`build_whyred.sh`), documentation (`README.md`, `AGENTS.md`), local manifests (`local_manifests/`), and editor settings (`.vscode/`).
+  - Scope: Orchestration scripts (`build_whyred.sh`, `publish_release.sh`), documentation (`README.md`, `AGENTS.md`), local manifests (`local_manifests/`), and editor configs.
 - **Device Tree** (`device/xiaomi/whyred`):
   - Remote: `git@github.com:kveld9/android_device_xiaomi_whyred.git` (`lineage-21`)
   - Scope: Device-specific makefiles, overlays, permissions, and device configs.
@@ -29,21 +116,18 @@ This project comprises the root orchestration repository and device-specific tre
 - **Common Device Tree** (`device/xiaomi/sdm660-common`):
   - Remote: `git@github.com:kveld9/android_device_xiaomi_sdm660-common.git` (`lineage-21`)
   - Scope: Shared SDM660 HAL definitions, init scripts, and power configs.
+- **Recovery Device Tree** (`../orangefox_device_xiaomi_whyred`):
+  - Remote: `git@github.com:kveld9/orangefox_device_xiaomi_whyred.git` (`main`)
+  - Scope: OrangeFox / TWRP recovery device tree, FBE configs, and CI compilation workflow.
 - **Build System** (`build/make`):
   - Remote: `git@github.com:kveld9/android_build.git` (`lineage-21.0`)
   - Scope: Core build system logic, target packaging rules, and release tools.
 - **Build Core Tools** (`build/blueprint`, `build/soong`):
   - Build graph generation, bootstrap configurations, and compilation tools.
 
-## 4. Build Continuity & Autonomous Fixes
-- **Explicit Compilation Authorization**: Never initiate or trigger any compilation process (`mka`, `m bootimage`, `m bacon`, kernel builds, or script-driven builds) unless the user explicitly and directly commands or approves compilation. All investigations, configurations, file changes, and adjustments must remain strictly within source/configuration files without building until explicit user confirmation is given.
-- **When Compilation is Authorized**:
-  1. Autonomously diagnose build failures from build logs.
-  2. Apply minimal reproducible fixes in the proper sub-tree.
-  3. Commit each fix with a Conventional Commit in English in that sub-repo.
-  4. Push the commit to its corresponding GitHub remote immediately.
-  5. Resume compilation until the target artifact (`m bacon` ROM zip or requested image) is 100% completed.
+---
 
-## 5. Documentation & README Maintenance
-- **Keep README Updated**: Whenever changes occur to repository topology, fork remotes, build procedures, patch levels, partition layouts, or release artifacts, the agent must immediately update `README.md` to keep documentation accurate, complete, and synchronized with the actual codebase state.
-- **Continuous Synchronization**: Documentation updates must be committed with Conventional Commits (e.g., `docs: update README with ...`) and pushed to the remote repository.
+## 10. Documentation & README Maintenance Policy
+- **Synchronize Only Meaningful Changes**: Update `README.md` when repository topology, supported branches, build procedures, patch levels, partition layouts, prerequisites, or release artifacts change.
+- **Prevent Documentation Churn**: Do not modify `README.md` for internal bugfixes, code refactorings, or implementation details that do not alter user-facing or documented behavior.
+- **Commit Standards**: Documentation updates must be committed with Conventional Commits (e.g., `docs: update README with ...`) in English and pushed to the remote repository.
