@@ -62,62 +62,6 @@ This repository orchestrates the build environment, local manifests, documentati
 
 ---
 
-## Building from Source
-
-### Prerequisites
-- Linux host (Arch Linux / Debian / Ubuntu) with 32 GB RAM (or 16 GB + swapfile).
-- Android build dependencies, `repo` tool, `git-lfs`, and `ccache`.
-
-### Syncing Sources
-```bash
-# Initialize LineageOS 21 repo
-repo init -u https://github.com/LineageOS/android.git -b lineage-21.0 --git-lfs
-
-# Add local manifest
-mkdir -p .repo/local_manifests
-cp local_manifests/whyred.xml .repo/local_manifests/whyred.xml
-
-# Sync repos
-repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune -j$(nproc)
-```
-
-### Compiling & Automated Pipelines
-
-Prepare the environment:
-```bash
-./build_whyred.sh
-```
-
-Available build and automation workflows:
-- **Compile ROM only**:
-  ```bash
-  ./build_whyred.sh --build
-  # Or manually: mka bacon
-  ```
-- **Build KernelSU Next + SuSFS Boot Image**:
-  ```bash
-  ./build_ksu_boot.sh
-  # Or: ./build_whyred.sh --build-ksu
-  ```
-- **Publish Release to GitHub**:
-  ```bash
-  ./publish_release.sh
-  # Or dry-run: ./publish_release.sh --dry-run
-  ```
-- **Full End-to-End Pipeline** (Build ROM -> Build KSU Boot -> Generate Checksums & Changelog -> Publish to GitHub):
-  ```bash
-  ./build_whyred.sh --all
-  ```
-
-Built artifacts generated in `out/target/product/whyred/`:
-- `lineage-21.0-*-UNOFFICIAL-whyred.zip` (Flashable ROM zip signed with private `release-keys`)
-- `boot.img` (Stock Clean Kernel 4.19 + Ramdisk)
-- `boot-ksu.img` (KernelSU Next v3.1.0-legacy-susfs + SuSFS v2.0.0 Kernel + Ramdisk)
-- `recovery.img` (LineageOS 21 Recovery)
-- `sha256sums.txt` (Cryptographic SHA-256 digests for all assets)
-
----
-
 ## Flashing Instructions
 
 ### Recommended Filesystem for `/data` (F2FS)
@@ -187,16 +131,16 @@ To maintain maximum stealth (bypassing root/mount detection), security, and bank
 
 | Setting / Toggle | Location | Recommended State | Technical Rationale |
 | :--- | :--- | :--- | :--- |
-| **Desmontar módulos** (*Umount modules by default*) | Settings &rarr; General | **ENABLED (ON)** | Ensures module mount points (`/debug_ramdisk`, overlayfs, and bind mounts) are unmounted by default in non-root app namespaces. Essential for app isolation. |
-| **Deshabilitar compatibilidad su** (*Disable su compat*) | Settings &rarr; General | **DISABLED (OFF)** | Leaves `/system/bin/su` active for authorized root apps. Only turn ON as an emergency kill-switch to temporarily revoke all root access without rebooting. |
+| **Umount modules by default** | Settings &rarr; General | **ENABLED (ON)** | Ensures module mount points (`/debug_ramdisk`, overlayfs, and bind mounts) are unmounted by default in non-root app namespaces. Essential for app isolation. |
+| **Disable su compat** | Settings &rarr; General | **DISABLED (OFF)** | Leaves `/system/bin/su` active for authorized root apps. Only turn ON as an emergency kill-switch to temporarily revoke all root access without rebooting. |
 | **Disable kernel umount** | Settings &rarr; General *(Dev)* | **DISABLED (OFF)** | **CRITICAL**: Turning this ON disables kernel-level unmounting, which directly breaks SuSFS stealth and exposes module mounts to Zygote and app processes. Must remain **OFF** so kernel umount stays active. |
 | **Disable avc spoofing** | Settings &rarr; General *(Dev)* | **DISABLED (OFF)** | **CRITICAL**: Turning this ON disables SELinux AVC denial spoofing. Leaving it **OFF** allows KernelSU to intercept and mask audit log context leaks (`avc: denied`), preventing detection by apps inspecting `dmesg`/`logcat`. |
-| **SELinux Permissive** | Settings &rarr; General *(Dev)* | **DISABLED (OFF)** | **CRITICAL**: Keeps SELinux in **Enforcing** mode (`Estricto`). Permissive mode immediately trips Google Play Integrity (`MEETS_DEVICE_INTEGRITY`) and flags the device in all banking and enterprise applications. |
-| **Verificar si hay actualizaciones** (*Check updates*) | Settings &rarr; Updates | **DISABLED (OFF)** | Prevents the manager from prompting or auto-downloading incompatible newer manager releases (v3.3.0+), which enforce UAPI 2 and generate red warning cards on Linux 4.19. |
-| **Activar opciones de desarrollador** (*Developer options*) | Settings &rarr; Developer | **ENABLED (ON)** | Enables visibility of low-level kernel toggles (*Disable kernel umount*, *Disable avc spoofing*, *SELinux Permissive*) to inspect and verify their states. |
-| **Activar depuración de WebView** (*WebView debugging*) | Settings &rarr; Developer | **DISABLED (OFF)** | Minimizes attack surface. Only enable temporarily when developing or debugging WebUI components within custom KernelSU modules. |
+| **SELinux Permissive** | Settings &rarr; General *(Dev)* | **DISABLED (OFF)** | **CRITICAL**: Keeps SELinux in **Enforcing** mode. Permissive mode immediately trips Google Play Integrity (`MEETS_DEVICE_INTEGRITY`) and flags the device in all banking and enterprise applications. |
+| **Check updates** | Settings &rarr; Updates | **DISABLED (OFF)** | Prevents the manager from prompting or auto-downloading incompatible newer manager releases (v3.3.0+), which enforce UAPI 2 and generate red warning cards on Linux 4.19. |
+| **Developer options** | Settings &rarr; Developer | **ENABLED (ON)** | Enables visibility of low-level kernel toggles (*Disable kernel umount*, *Disable avc spoofing*, *SELinux Permissive*) to inspect and verify their states. |
+| **WebView debugging** | Settings &rarr; Developer | **DISABLED (OFF)** | Minimizes attack surface. Only enable temporarily when developing or debugging WebUI components within custom KernelSU modules. |
 
-> **Note on Developer Settings:** In KernelSU Next Manager, advanced toggles (*Disable kernel umount*, *Disable avc spoofing*, and *SELinux Permissive*) only appear in the main settings screen after unlocking developer mode (tapping **Versión del gestor** 7 times under Settings).
+> **Note on Developer Settings:** In KernelSU Next Manager, advanced toggles (*Disable kernel umount*, *Disable avc spoofing*, and *SELinux Permissive*) only appear in the main settings screen after unlocking developer mode (tapping **Manager version** 7 times under Settings).
 
 ---
 
@@ -331,6 +275,66 @@ The following core applications must remain installed unless explicit replacemen
 
 ## Releases & Downloads
 Flashable builds and recovery images are available under [GitHub Releases](https://github.com/kveld9/lineageos-whyred/releases).
+
+---
+
+## Building from Source
+
+### Prerequisites
+- Linux host (Arch Linux / Debian / Ubuntu) with 32 GB RAM (or 16 GB + swapfile).
+- Android build dependencies, `repo` tool, `git-lfs`, and `ccache`.
+
+### Syncing Sources
+```bash
+# Clone the orchestration repository
+git clone https://github.com/kveld9/lineageos-whyred.git
+cd lineageos-whyred
+
+# Initialize LineageOS 21 repo
+repo init -u https://github.com/LineageOS/android.git -b lineage-21.0 --git-lfs
+
+# Add local manifest
+mkdir -p .repo/local_manifests
+cp local_manifests/whyred.xml .repo/local_manifests/whyred.xml
+
+# Sync repos
+repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune -j$(nproc)
+```
+
+### Compiling & Automated Pipelines
+
+Prepare the environment:
+```bash
+./build_whyred.sh
+```
+
+Available build and automation workflows:
+- **Compile ROM only**:
+  ```bash
+  ./build_whyred.sh --build
+  # Or manually: mka bacon
+  ```
+- **Build KernelSU Next + SuSFS Boot Image**:
+  ```bash
+  ./build_ksu_boot.sh
+  # Or: ./build_whyred.sh --build-ksu
+  ```
+- **Publish Release to GitHub**:
+  ```bash
+  ./publish_release.sh
+  # Or dry-run: ./publish_release.sh --dry-run
+  ```
+- **Full End-to-End Pipeline** (Build ROM -> Build KSU Boot -> Generate Checksums & Changelog -> Publish to GitHub):
+  ```bash
+  ./build_whyred.sh --all
+  ```
+
+Built artifacts generated in `out/target/product/whyred/`:
+- `lineage-21.0-*-UNOFFICIAL-whyred.zip` (Flashable ROM zip signed with private `release-keys`)
+- `boot.img` (Stock Clean Kernel 4.19 + Ramdisk)
+- `boot-ksu.img` (KernelSU Next v3.1.0-legacy-susfs + SuSFS v2.0.0 Kernel + Ramdisk)
+- `recovery.img` (LineageOS 21 Recovery)
+- `sha256sums.txt` (Cryptographic SHA-256 digests for all assets)
 
 ---
 
