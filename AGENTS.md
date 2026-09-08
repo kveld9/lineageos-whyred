@@ -131,3 +131,15 @@ Never run any of the following commands without explicit user authorization:
 - **Synchronize Only Meaningful Changes**: Update `README.md` when repository topology, supported branches, build procedures, patch levels, partition layouts, prerequisites, or release artifacts change.
 - **Prevent Documentation Churn**: Do not modify `README.md` for internal bugfixes, code refactorings, or implementation details that do not alter user-facing or documented behavior.
 - **Commit Standards**: Documentation updates must be committed with Conventional Commits (e.g., `docs: update README with ...`) in English and pushed to the remote repository.
+
+---
+
+## 11. Prohibition on Hardcoded Local Paths
+- **Zero Local Paths in Public Artifacts**: Never include hardcoded local absolute filesystem paths (such as `/home/<username>/...`, user-specific home paths, or local workstation paths) in documentation (`README.md`, guides), scripts, build configurations, or any git-tracked artifacts.
+- **Portable & Relative Linking**: All documentation links, cross-references, and script invocations must strictly use relative paths (e.g., `debloat_whyred.sh`, `./scripts/build.sh`) or portable POSIX environment variables (e.g., `${PWD}`, `${HOME}`).
+
+---
+
+## 12. Strict Prohibition on Emoji Usage
+- **No Emojis Across Repository & Metadata**: Absolutely no emojis are permitted in technical documentation (`README.md`, `AGENTS.md`), source code, comments, script output logs, commit messages, PR titles, or PR descriptions.
+- **Professional Plain-Text Formatting**: Use clear, concise plain-text indicators and standard ASCII tags (e.g., `[INFO]`, `[OK]`, `[WARN]`, `[FAIL]`, `[DRY-RUN]`, standard bullets `*` or `•`) instead of emoji glyphs.
