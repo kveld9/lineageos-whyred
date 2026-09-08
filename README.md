@@ -150,7 +150,43 @@ Although LineageOS 21.0 is significantly cleaner than vendor stock firmware (MIU
 
 System apps can be safely uninstalled for the current user (`user 0`) via ADB without root or partition modification.
 
-### Debloating Commands
+### Automated Debloating Script (`debloat_whyred.sh`)
+
+An automated, modular debloat script is provided in the root of the repository: [`debloat_whyred.sh`](file:///home/kveld/Documentos/repos/lineageos-whyred/debloat_whyred.sh). It includes all **102 safe packages** documented below by default and runs in less than one second using package presence caching.
+
+#### Quick Usage:
+```bash
+# 1. Debloat all 102 safe packages in one single step
+./debloat_whyred.sh
+
+# 2. Preview packages to be debloated without modifying the device (Dry-Run)
+./debloat_whyred.sh --dry-run
+
+# 3. Restore / Re-install previously uninstalled packages
+./debloat_whyred.sh --restore
+
+# 4. List all registered packages grouped by section
+./debloat_whyred.sh --list
+```
+
+#### Modular Customization:
+The script organizes packages into 4 categorized bash arrays at the top of the file:
+1. `TELEMETRY_AND_DAEMONS`: Background trackers, regional daemons (Soter, IFAA), unused hardware services (NFC).
+2. `LINEAGEOS_MULTIMEDIA`: Stock media tools (Jelly, Eleven, Recorder, AudioFX, SetupWizard).
+3. `BACKGROUND_AND_SYNC`: Cloud backup helpers, remote key provisioning, DSU, Health Connect.
+4. `THEME_OVERLAYS`: Unused AOSP icon packs, shapes, and font overlays.
+
+To exclude any package from being uninstalled, open [`debloat_whyred.sh`](file:///home/kveld/Documentos/repos/lineageos-whyred/debloat_whyred.sh) and comment out its line with `#`. To add new packages, append them directly to the appropriate array.
+
+#### Robust Package Handling:
+- Standard packages are uninstalled for `user 0` using `pm uninstall --user 0 <pkg>`.
+- Packages restricted by Android framework policy (such as `org.lineageos.profiles`) automatically fall back to `pm disable-user --user 0 <pkg>`.
+- The `--restore` flag invokes both `pm enable <pkg>` and `cmd package install-existing <pkg>`.
+
+---
+
+### Manual ADB Commands
+If you prefer removing or restoring packages individually:
 
 #### Uninstall via ADB:
 ```bash
