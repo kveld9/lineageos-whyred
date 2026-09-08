@@ -160,6 +160,23 @@ Whyred (Snapdragon 660) operates on **Linux Kernel 4.19**, which belongs to the 
 - **Why Manager v3.1.0 (33024) is Required:**
   KernelSU Next v3 completely replaced the legacy `prctl(0xdeadbeef, ...)` communication channel from v0.x/v1.x with an anonymous-inode file descriptor supercall subsystem (`ksu_install_fd` dispatched via `sys_reboot`). The exact matching companion app is **KernelSU Next Manager v3.1.0** (`versionCode: 33024`). Newer managers (such as v3.3.0) enforce UAPI version 2 (driver version >= 33188) and trigger UAPI version mismatch warnings when paired with the legacy 33024 driver.
 
+#### Recommended KernelSU Next Manager Settings
+
+To maintain maximum stealth (bypassing root/mount detection), security, and banking app compatibility (Play Integrity / CTS pass), configure the settings in **KernelSU Next Manager** as follows:
+
+| Setting / Toggle | Location | Recommended State | Technical Rationale |
+| :--- | :--- | :--- | :--- |
+| **Desmontar módulos** (*Umount modules by default*) | Settings &rarr; General | **ENABLED (ON)** | Ensures module mount points (`/debug_ramdisk`, overlayfs, and bind mounts) are unmounted by default in non-root app namespaces. Essential for app isolation. |
+| **Deshabilitar compatibilidad su** (*Disable su compat*) | Settings &rarr; General | **DISABLED (OFF)** | Leaves `/system/bin/su` active for authorized root apps. Only turn ON as an emergency kill-switch to temporarily revoke all root access without rebooting. |
+| **Disable kernel umount** | Settings &rarr; General *(Dev)* | **DISABLED (OFF)** | **CRITICAL**: Turning this ON disables kernel-level unmounting, which directly breaks SuSFS stealth and exposes module mounts to Zygote and app processes. Must remain **OFF** so kernel umount stays active. |
+| **Disable avc spoofing** | Settings &rarr; General *(Dev)* | **DISABLED (OFF)** | **CRITICAL**: Turning this ON disables SELinux AVC denial spoofing. Leaving it **OFF** allows KernelSU to intercept and mask audit log context leaks (`avc: denied`), preventing detection by apps inspecting `dmesg`/`logcat`. |
+| **SELinux Permissive** | Settings &rarr; General *(Dev)* | **DISABLED (OFF)** | **CRITICAL**: Keeps SELinux in **Enforcing** mode (`Estricto`). Permissive mode immediately trips Google Play Integrity (`MEETS_DEVICE_INTEGRITY`) and flags the device in all banking and enterprise applications. |
+| **Verificar si hay actualizaciones** (*Check updates*) | Settings &rarr; Updates | **DISABLED (OFF)** | Prevents the manager from prompting or auto-downloading incompatible newer manager releases (v3.3.0+), which enforce UAPI 2 and generate red warning cards on Linux 4.19. |
+| **Activar opciones de desarrollador** (*Developer options*) | Settings &rarr; Developer | **ENABLED (ON)** | Enables visibility of low-level kernel toggles (*Disable kernel umount*, *Disable avc spoofing*, *SELinux Permissive*) to inspect and verify their states. |
+| **Activar depuración de WebView** (*WebView debugging*) | Settings &rarr; Developer | **DISABLED (OFF)** | Minimizes attack surface. Only enable temporarily when developing or debugging WebUI components within custom KernelSU modules. |
+
+> **Note on Developer Settings:** In KernelSU Next Manager, advanced toggles (*Disable kernel umount*, *Disable avc spoofing*, and *SELinux Permissive*) only appear in the main settings screen after unlocking developer mode (tapping **Versión del gestor** 7 times under Settings).
+
 ---
 
 ## System Debloating & Optimization (ADB)
