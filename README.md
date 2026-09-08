@@ -16,6 +16,27 @@ Unofficial Android 14 (LineageOS 21.0) port powered by Linux Kernel 4.19 (`4.19.
 
 ---
 
+## Why LineageOS?
+
+LineageOS was deliberately chosen as the long-term system foundation for `whyred` based on core architectural principles:
+
+- **Architectural Purity & Minimalist Baseline:**
+  Unlike vendor stock firmware (MIUI/HyperOS) burdened with intrusive telemetry daemons, analytics tracking, and aggressive background process killing, LineageOS adheres strictly to clean AOSP design. It avoids arbitrary cosmetic hacks and feature bloat that cause memory leaks and degrade responsiveness on mid-range hardware (Snapdragon 660 with eMMC 5.1).
+
+- **Hardware Longevity & Combating Planned Obsolescence:**
+  Official OEM support for `whyred` ceased on Android 9 (Pie) running an obsolete Linux 4.4 kernel. LineageOS 21.0 paired with our modernized Linux 4.19 kernel backport elevates this 2018 device to Android 14 with contemporary platform security patches, extending its secure, daily operational lifecycle by nearly a decade.
+
+- **Strict Security & Uncompromised SELinux:**
+  Many aftermarket custom ROMs take shortcuts to bypass difficult HAL/vendor bugs by setting SELinux to Permissive, relaxing sepolicy rules, or shipping untrusted binaries. LineageOS maintains an auditable, strictly **Enforcing** SELinux foundation, enabling modern cryptographic storage models (FBE with ICE) and compliance with enterprise security standards.
+
+- **The Deterministic Foundation for KernelSU Next & SuSFS:**
+  Achieving root sovereignty without compromising device security or breaking banking applications requires a predictable, standards-compliant userspace. LineageOS’s unadulterated framework serves as the ideal baseline for kernel-level hooking (KernelSU Next v3.1.0) and filesystem stealth (SuSFS v2.0.0), ensuring clean namespace unmounting and total isolation.
+
+- **Upstream Standards & Source-Level Reproducibility:**
+  LineageOS establishes the industry standard for device tree modularity (`device/xiaomi/whyred`, `device/xiaomi/sdm660-common`, `vendor/xiaomi/whyred`). Every commit, HAL definition, and overlay is transparent, deterministic, and maintainable directly from source.
+
+---
+
 ## Project Architecture & Topology
 
 This repository orchestrates the build environment, local manifests, documentation, and tooling. The device-specific trees are versioned in personal forks under `kveld9/*`:
