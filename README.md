@@ -24,7 +24,7 @@ LineageOS was deliberately chosen as the long-term system foundation for `whyred
   Unlike vendor stock firmware (MIUI/HyperOS) burdened with intrusive telemetry daemons, analytics tracking, and aggressive background process killing, LineageOS adheres strictly to clean AOSP design. It avoids arbitrary cosmetic hacks and feature bloat that cause memory leaks and degrade responsiveness on mid-range hardware (Snapdragon 660 with eMMC 5.1).
 
 - **Hardware Longevity & Combating Planned Obsolescence:**
-  Official OEM support for `whyred` ceased on Android 9 (Pie) running an obsolete Linux 4.4 kernel. LineageOS 21.0 paired with our modernized Linux 4.19 kernel backport elevates this 2018 device to Android 14 with contemporary platform security patches, extending its secure, daily operational lifecycle by nearly a decade.
+  Official OEM support for `whyred` ceased on Android 9 (Pie) running an obsolete Linux 4.4 kernel. LineageOS 21.0 paired with this modernized Linux 4.19 kernel backport elevates this 2018 device to Android 14 with contemporary platform security patches, extending its secure, daily operational lifecycle by nearly a decade.
 
 - **Strict Security & Uncompromised SELinux:**
   Many aftermarket custom ROMs take shortcuts to bypass difficult HAL/vendor bugs by setting SELinux to Permissive, relaxing sepolicy rules, or shipping untrusted binaries. LineageOS maintains an auditable, strictly **Enforcing** SELinux foundation, enabling modern cryptographic storage models (FBE with ICE) and compliance with enterprise security standards.
