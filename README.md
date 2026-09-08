@@ -152,7 +152,7 @@ System apps can be safely uninstalled for the current user (`user 0`) via ADB wi
 
 ### Automated Debloating Script (`debloat_whyred.sh`)
 
-An automated, modular debloat script is provided in the root of the repository: [`debloat_whyred.sh`](file:///home/kveld/Documentos/repos/lineageos-whyred/debloat_whyred.sh). It includes all **102 safe packages** documented below by default and runs in less than one second using package presence caching.
+An automated, modular debloat script is provided in the root of the repository: [`debloat_whyred.sh`](debloat_whyred.sh). It includes all **102 safe packages** documented below by default and runs in less than one second using package presence caching.
 
 #### Quick Usage:
 ```bash
@@ -176,7 +176,7 @@ The script organizes packages into 4 categorized bash arrays at the top of the f
 3. `BACKGROUND_AND_SYNC`: Cloud backup helpers, remote key provisioning, DSU, Health Connect.
 4. `THEME_OVERLAYS`: Unused AOSP icon packs, shapes, and font overlays.
 
-To exclude any package from being uninstalled, open [`debloat_whyred.sh`](file:///home/kveld/Documentos/repos/lineageos-whyred/debloat_whyred.sh) and comment out its line with `#`. To add new packages, append them directly to the appropriate array.
+To exclude any package from being uninstalled, open [`debloat_whyred.sh`](debloat_whyred.sh) and comment out its line with `#`. To add new packages, append them directly to the appropriate array.
 
 #### Robust Package Handling:
 - Standard packages are uninstalled for `user 0` using `pm uninstall --user 0 <pkg>`.
