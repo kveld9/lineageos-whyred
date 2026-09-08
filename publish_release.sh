@@ -213,8 +213,8 @@ If you require root with clean Play Integrity / SafetyNet pass:
    fastboot flash boot boot-ksu.img
    fastboot reboot
    \`\`\`
-2. Download and install the latest **KernelSU Next Manager** APK from GitHub:
-   - Releases: https://github.com/KernelSU-Next/KernelSU-Next/releases
+2. Download and install **KernelSU Next Manager v3.1.0 (33024)** APK from GitHub:
+   - Release: https://github.com/KernelSU-Next/KernelSU-Next/releases/tag/v3.1.0
 
 EOF
 
