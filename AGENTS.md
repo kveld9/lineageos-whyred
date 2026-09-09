@@ -189,3 +189,18 @@ If a branch contains work whose preservation status cannot be established with c
 ## 12. Strict Prohibition on Emoji Usage
 - **No Emojis Across Repository & Metadata**: Absolutely no emojis are permitted in technical documentation (`README.md`, `AGENTS.md`), source code, comments, script output logs, commit messages, PR titles, or PR descriptions.
 - **Professional Plain-Text Formatting**: Use clear, concise plain-text indicators and standard ASCII tags (e.g., `[INFO]`, `[OK]`, `[WARN]`, `[FAIL]`, `[DRY-RUN]`, standard bullets `*` or `•`) instead of emoji glyphs.
+
+---
+
+## 13. Hardware Validation & Audit Registry Protocol
+- **Continuous Audit Documentation**: Every diagnostic gate, physical hardware test, regression audit, or adversarial exploration conducted on the target device must be systematically documented in `AUDIT_REGISTRY.md`.
+- **Mandatory Update Cycle**: Whenever hardware tests are executed (whether resulting in `[PASS]`, `[FAIL]`, or `[NOMINAL]`), `AUDIT_REGISTRY.md` must be updated in the same operational unit before proceeding to subsequent tasks or declaring a gate complete.
+- **Audit Entry Structure**:
+  Each audit entry in `AUDIT_REGISTRY.md` must strictly capture:
+  - **Gate / Component**: Target hardware subsystem, driver, or service.
+  - **Test Matrix & Scope**: Specific scenarios, operational conditions, and reproduction steps.
+  - **Observed Behavior & Evidence**: Raw telemetry, commands, outputs, or panic traces.
+  - **Defect Classification & Root Cause**: Detailed causal analysis (or characterization if nominal).
+  - **Applied Solution**: Source code modifications, configuration changes, or operational remediations.
+  - **Traceability & Commits**: Exact commit hashes, affected repositories, and kernel branch synchronization.
+  - **Final Verdict**: Plain-text status indicator (`[PASS]`, `[FAIL]`, `[FIXED]`, `[NOMINAL]`).
