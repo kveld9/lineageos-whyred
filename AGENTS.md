@@ -2,7 +2,7 @@
 
 ## 1. Operational Pipeline
 Every authorized modification or fix must strictly execute through the following operational pipeline:
-**Scope Lock → State Inspection → Risk Gate → Minimal Change → Validation → Atomic Commit → Push Verification → Documentation Sync**
+**Scope Lock → State Inspection → Risk Gate → Minimal Change → Validation → Cross-Variant Gate (Kernel) → Atomic Commit → Push Verification → Documentation Sync**
 
 ---
 
@@ -60,13 +60,28 @@ Never run any of the following commands without explicit user authorization:
 - **Kernel Isolation**: Linux kernel 4.19 driver, subsystem, defconfig, and core architecture changes belong exclusively to `kernel/xiaomi/sdm660`.
 - **DTS Classification**: Device-specific Device Tree Source (DTS) modifications must be classified carefully before editing (kernel DTS in `kernel/xiaomi/sdm660/arch/arm64/boot/dts/` vs device tree configurations in `device/xiaomi/whyred`).
 - **No Duplicate Fixes**: Never duplicate a fix across kernel and device trees without concrete evidence that both require independent changes.
-- **Dual Kernel Maintenance & Parity Policy**:
-  - Two kernel branches are maintained in parallel in `kernel/xiaomi/sdm660`:
-    - `lineage-21`: Stock LineageOS 21 Linux 4.19 kernel.
+- **Multi-Variant Kernel Parity & Cross-Variant Fix Protocol**:
+  - The kernel tree (`kernel/xiaomi/sdm660`) maintains parallel production variants:
+    - `lineage-21`: Canonical stock LineageOS 21 Linux 4.19 kernel.
     - `lineage-21-ksu`: KernelSU-Next and SuSFS integration line.
-  - The only architectural distinction between both branches is the KernelSU-Next / SuSFS patchset and its configuration symbols.
-  - Subsystem, driver, power, display, connectivity, stability, and bug fixes are kernel-agnostic and apply equally to both kernels.
-  - Whenever a general kernel fix or improvement is applied to either branch, verify and synchronize/cherry-pick the change to the counterpart branch to preserve strict parity.
+    - Additional authorized dedicated variants (e.g., `lineage-21-resukisu`).
+  - **Shared Foundation Principle**: Kernel variants share a common hardware foundation: Qualcomm/Xiaomi drivers, architecture, core subsystems, hardware DTS, power, audio, camera, and base platform configurations. Variance across branches must strictly reflect explicitly scoped variant-specific deltas (e.g., KSU/SuSFS/ReSukiSU patchsets and their required integration hooks).
+  - **Cross-Variant Verification Gate**:
+    - Whenever a bug, stability defect, build failure, driver issue, or configuration omission is investigated or fixed on ANY kernel variant touching a potentially shared surface:
+      1. **Identify Shared Surface**: Determine if the affected file, subsystem, driver, DTS, or configuration belongs to the shared platform foundation rather than variant-specific logic.
+      2. **Audit Active Sister Variants**: Before considering the task or fix unit closed, inspect all active sister variant branches to determine whether the same issue exists or applies.
+      3. **Formal Classification**: Each active sister variant must be audited and classified into one of the following states:
+         - `FIXED`: Fix ported and verified on the variant within the same operational unit.
+         - `ALREADY-FIXED`: Defect was already resolved in the variant or its common ancestor.
+         - `EQUIVALENT`: Functionally identical fix already exists under different architecture/hash.
+         - `NOT-AFFECTED`: The defect does not apply due to architectural differences (e.g., absent feature or variant-specific prerequisite).
+         - `CONFLICTING`: The fix collides with variant-specific code (e.g., VFS hooks) and requires custom semantic adaptation.
+         - `PENDING`: Fix evaluation or physical testing is blocked, requiring explicit tracking in `AUDIT_REGISTRY.md`.
+    - **No Blind Cherry-Picks**: Cross-variant ports must be evaluated semantically. Never execute an automatic or uninspected `git cherry-pick` without verifying surrounding context, especially in files containing variant hooks (`fs/namei.c`, `fs/namespace.c`, `fs/exec.c`, etc.).
+    - **Variant-Specific Fix Isolation**:
+      - Fixes strictly internal to a variant (e.g., KernelSU hook adaptation, SuSFS C90 compliance, supercall definitions) must be explicitly scoped (e.g., `fix(ksu): ...`, `fix(susfs): ...`) and must NEVER be propagated to stock or unrelated variants.
+    - **Targeted Documentation**:
+      - Document cross-variant classification in `AUDIT_REGISTRY.md` or the commit message whenever a fix touches a shared platform surface. Commits strictly internal to variant-specific logic do not require cross-variant documentation.
 
 ---
 
