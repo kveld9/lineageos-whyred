@@ -40,7 +40,7 @@ A modular, self-contained shell script is provided in the root of the repository
 ### Modular Customization
 
 The script organizes packages into 4 categorized bash arrays at the top of the file:
-1. `TELEMETRY_AND_DAEMONS`: Background trackers, regional daemons (Soter, IFAA), unused hardware services (NFC).
+1. `TELEMETRY_AND_DAEMONS`: Background trackers, regional daemons (Soter, IFAA), vestigial services for absent hardware (NFC).
 2. `LINEAGEOS_MULTIMEDIA`: Stock media tools (Jelly, Eleven, Recorder, AudioFX, SetupWizard).
 3. `BACKGROUND_AND_SYNC`: Cloud backup helpers, remote key provisioning, DSU, Health Connect.
 4. `THEME_OVERLAYS`: Unused AOSP icon packs, shapes, and font overlays.
