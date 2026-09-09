@@ -46,7 +46,7 @@ This repository orchestrates the build environment, local manifests, documentati
 - **Vendor Patch Level:** November 2018 (`2018-11-01`, Qualcomm/Xiaomi proprietary blobs)
 - **Partition Layout:** Standard static partitions (non-dynamic, original eMMC partition table)
 - **Encryption:** File-Based Encryption (FBE / ICE, `fileencryption=ice`)
-- **Signing & Keys:** Private RSA release keys in `certs/` (`releasekey`, `platform`, `shared`, `media`, `networkstack`, `bluetooth`, `sdk_sandbox`, `nfc`, `testkey`). Eliminates `test-keys` / public-key warnings in Trust and passes Play Integrity CTS profile.
+- **Signing & Keys:** Signed with private RSA release keys generated locally in `certs/` (git-ignored and never committed). Third-party builds automatically generate their own isolated keys. Eliminates `test-keys` / public-key warnings in Trust and passes Play Integrity CTS profile.
 
 ---
 
