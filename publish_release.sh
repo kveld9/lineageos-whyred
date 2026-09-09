@@ -17,6 +17,9 @@ TAG=""
 AUTO_CONFIRM=false
 DRY_RUN=false
 
+KERNEL_ONLY=""
+KERNEL_VARIANT=""
+
 # Parse flags
 for arg in "$@"; do
     case "${arg}" in
@@ -28,6 +31,14 @@ for arg in "$@"; do
             ;;
         --tag=*)
             TAG="${arg#*=}"
+            ;;
+        --kernel-release=*)
+            KERNEL_ONLY=true
+            KERNEL_VARIANT="${arg#*=}"
+            ;;
+        --kernel-only)
+            KERNEL_ONLY=true
+            KERNEL_VARIANT="all"
             ;;
         -*)
             echo "Unknown option: ${arg}"
@@ -41,13 +52,20 @@ for arg in "$@"; do
 done
 
 if [ -z "${TAG}" ]; then
-    TAG="${DEFAULT_TAG}"
+    if [ "${KERNEL_ONLY}" = true ]; then
+        TAG="kernel-${KERNEL_VARIANT}-$(date +%Y%m%d)-whyred"
+    else
+        TAG="${DEFAULT_TAG}"
+    fi
 fi
 
 echo "=========================================================="
 echo " LineageOS 21.0 Release Publisher for Redmi Note 5 Pro"
 echo " Target Tag: ${TAG}"
 echo " Output Directory: ${OUT_DIR}"
+if [ "${KERNEL_ONLY}" = true ]; then
+    echo " Mode: Standalone Kernel Release (${KERNEL_VARIANT})"
+fi
 echo "=========================================================="
 
 # 1. Verify GitHub CLI authentication
@@ -67,29 +85,68 @@ if [ ! -d "${OUT_DIR}" ]; then
     exit 1
 fi
 
-ROM_ZIP=$(ls -t "${OUT_DIR}"/lineage-21.0-*-UNOFFICIAL-whyred.zip 2>/dev/null | head -n 1 || true)
 BOOT_IMG="${OUT_DIR}/boot.img"
 BOOT_KSU_IMG="${OUT_DIR}/boot-ksu.img"
+BOOT_RESUKISU_IMG="${OUT_DIR}/boot-resukisu.img"
 RECOVERY_IMG="${OUT_DIR}/recovery.img"
+ROM_ZIP=$(ls -t "${OUT_DIR}"/lineage-21.0-*-UNOFFICIAL-whyred.zip 2>/dev/null | head -n 1 || true)
 
-if [ -z "${ROM_ZIP}" ] || [ ! -f "${ROM_ZIP}" ]; then
-    echo "ERROR: No LineageOS ROM zip found in ${OUT_DIR}."
-    exit 1
-fi
+RELEASE_ASSETS=()
 
-if [ ! -f "${BOOT_IMG}" ]; then
-    echo "ERROR: Stock boot image '${BOOT_IMG}' not found."
-    exit 1
-fi
+if [ "${KERNEL_ONLY}" = true ]; then
+    case "${KERNEL_VARIANT}" in
+        ksu|ksunext)
+            if [ ! -f "${BOOT_KSU_IMG}" ]; then
+                echo "ERROR: KernelSU boot image '${BOOT_KSU_IMG}' not found."
+                exit 1
+            fi
+            RELEASE_ASSETS+=("${BOOT_KSU_IMG}")
+            ;;
+        resukisu)
+            if [ ! -f "${BOOT_RESUKISU_IMG}" ]; then
+                echo "ERROR: ReSukiSU boot image '${BOOT_RESUKISU_IMG}' not found."
+                exit 1
+            fi
+            RELEASE_ASSETS+=("${BOOT_RESUKISU_IMG}")
+            ;;
+        stock)
+            if [ ! -f "${BOOT_IMG}" ]; then
+                echo "ERROR: Stock boot image '${BOOT_IMG}' not found."
+                exit 1
+            fi
+            RELEASE_ASSETS+=("${BOOT_IMG}")
+            ;;
+        all)
+            [ -f "${BOOT_IMG}" ] && RELEASE_ASSETS+=("${BOOT_IMG}")
+            [ -f "${BOOT_KSU_IMG}" ] && RELEASE_ASSETS+=("${BOOT_KSU_IMG}")
+            [ -f "${BOOT_RESUKISU_IMG}" ] && RELEASE_ASSETS+=("${BOOT_RESUKISU_IMG}")
+            ;;
+        *)
+            echo "ERROR: Unknown kernel variant '${KERNEL_VARIANT}'. Use: stock, ksu, resukisu, or all."
+            exit 1
+            ;;
+    esac
+else
+    if [ -z "${ROM_ZIP}" ] || [ ! -f "${ROM_ZIP}" ]; then
+        echo "ERROR: No LineageOS ROM zip found in ${OUT_DIR}."
+        exit 1
+    fi
+    if [ ! -f "${BOOT_IMG}" ]; then
+        echo "ERROR: Stock boot image '${BOOT_IMG}' not found."
+        exit 1
+    fi
+    if [ ! -f "${RECOVERY_IMG}" ]; then
+        echo "ERROR: Recovery image '${RECOVERY_IMG}' not found."
+        exit 1
+    fi
 
-if [ ! -f "${RECOVERY_IMG}" ]; then
-    echo "ERROR: Recovery image '${RECOVERY_IMG}' not found."
-    exit 1
-fi
-
-RELEASE_ASSETS=("${ROM_ZIP}" "${BOOT_IMG}" "${RECOVERY_IMG}")
-if [ -f "${BOOT_KSU_IMG}" ]; then
-    RELEASE_ASSETS+=("${BOOT_KSU_IMG}")
+    RELEASE_ASSETS=("${ROM_ZIP}" "${BOOT_IMG}" "${RECOVERY_IMG}")
+    if [ -f "${BOOT_KSU_IMG}" ]; then
+        RELEASE_ASSETS+=("${BOOT_KSU_IMG}")
+    fi
+    if [ -f "${BOOT_RESUKISU_IMG}" ]; then
+        RELEASE_ASSETS+=("${BOOT_RESUKISU_IMG}")
+    fi
 fi
 
 echo "Found release artifacts:"
@@ -206,15 +263,25 @@ $(cat "${CHECKSUMS_FILE}")
 4. **Reboot to System**:
    - Select **Reboot system now**.
 
-### Root via KernelSU Next + SuSFS (Optional)
-If you require root with clean Play Integrity / SafetyNet pass:
-1. Flash or boot the KernelSU Next kernel image:
+### Root via KernelSU Next + SuSFS (LTS / Stable)
+If you require proven, stable root with Play Integrity pass:
+1. Flash the KernelSU Next boot image:
    \`\`\`bash
    fastboot flash boot boot-ksu.img
    fastboot reboot
    \`\`\`
-2. Download and install **KernelSU Next Manager v3.1.0 (33024)** APK from GitHub:
-   - Release: https://github.com/KernelSU-Next/KernelSU-Next/releases/tag/v3.1.0
+2. Install **KernelSU Next Manager** APK:
+   - Release: https://github.com/KernelSU-Next/KernelSU-Next/releases
+
+### Root via ReSukiSU + SuSFS v2.3.0+ (Bleeding-Edge / Metamodules)
+If you require advanced stealth, metamodules, and multi-manager support:
+1. Flash the ReSukiSU boot image:
+   \`\`\`bash
+   fastboot flash boot boot-resukisu.img
+   fastboot reboot
+   \`\`\`
+2. Install **ReSukiSU Manager** (or any supported multi-manager):
+   - Release: https://github.com/ReSukiSU/ReSukiSU/releases
 
 EOF
 

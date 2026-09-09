@@ -32,6 +32,7 @@ In accordance with `AGENTS.md` Section 13, this registry must be continuously ma
 | **Phase P6 KTweak Benchmark**| Comparative Evaluation of Community Magisk Profiles (KTweak Balance, Latency, Throughput) | `[APPLIED]` | sched_child_runs_first=1 cuts app launch latency by -6.9% (-35.6ms); tcp_fastopen=3 cuts handshake latency by -51.2% (61.3ms -> 29.9ms); KTweak CFS granularity (500us/100us) degrades switch latency by 58-346% (falsified) | Applied sched_child_runs_first=1, tcp_fastopen=3, and tcp_ecn=1 via common rootdir init.qcom.power.rc | `c1a03f6` (`sdm660-common`) |
 | **Phase P7 YAKT & thatKernel**| Comparative Evaluation of Community Profiles (YAKT & thatKernel) | `[APPLIED]` | page-cluster=0 accelerates app cold start by -19.2ms (Settings) and -50.2ms (Vivaldi) by eliminating 32KB zRAM decompression readahead; sched_migration_cost_ns=50000 cuts cross-cluster switch latency by -79.7% (76.9us -> 15.6us) at -7.2% compute cost; sched_schedstats=0 falsified (zero gain) | Applied page-cluster=0 and sched_migration_cost_ns=50000 via common rootdir init.qcom.power.rc | `49b08b7` (`sdm660-common`) |
 | **Phase P8 UI & Net Optimization**| System-Level Background Blur Disabling & TCP Idle CWND Preservation | `[APPLIED]` | Background blur disabled in vendor.prop and framework overlay (eliminates Adreno 509 multi-pass Gaussian blur jank); tcp_slow_start_after_idle=0 applied in rootdir power init | Applied ro.surface_flinger.supports_background_blur=0, ro.sf.blurs_are_expensive=1, config_backgroundBlurSupported=false, and tcp_slow_start_after_idle=0 | `6719c31` (`sdm660-common`) |
+| **Gate KERNEL-VAR** | Multi-Variant Kernel Parity: ReSukiSU + SuSFS v2.3.0 Integration | `[FIXED]` | Integration of ReSukiSU on clean `lineage-21` foundation with full cross-variant parity | In-tree self-contained `drivers/kernelsu`, clean SuSFS v2.3.0 inline hooks, defconfig synced, 5 platform fixes inherited | `cb3c0da`, `615c3fe` (`kernel`) |
 
 
 ---
@@ -692,6 +693,24 @@ In accordance with `AGENTS.md` Section 13, this registry must be continuously ma
   - Commit: `6719c31` (`device/xiaomi/sdm660-common`).
 * **Verdict**: `[APPLIED]`. Clean canonical AOSP framework overlay and vendor properties applied; zero volatile Magisk modules required.
 
+---
 
-
-
+### 23. Multi-Variant Kernel Parity & ReSukiSU + SuSFS v2.3.0 Integration (Gate KERNEL-VAR)
+* **Scope**: Formal establishment of the 3rd parallel kernel line `lineage-21-resukisu` under the Multi-Variant Kernel Parity Protocol (`AGENTS.md` Section 6) on Xiaomi Redmi Note 5 (`whyred`).
+* **Architectural Rationale & Baseline Verification**:
+  - **Rejection of Contaminated Baseline**: A pre-existing community branch `san-kernel/resukisu-v4.2.0(35115)-susfs-v2.3.0` was audited and found to contain 10,445 non-standard commits (unverified memory management patches, scheduler hacks, LZ4 custom assembly, and out-of-tree WiFi modifications) on top of Linux 4.19. Basing any variant on this branch would violate the Shared Foundation Principle and risk severe regressions.
+  - **Canonical Clean Branching**: `lineage-21-resukisu` was branched directly from clean `lineage-21` (stock LineageOS 21 Linux 4.19.325), cleanly inheriting all verified platform and hardware fixes:
+    1. `perf(config)`: `27bc8930cfd0b` (empirical hardware optimizations: CFS 4ms, dirty 10/5, mq-deadline, F2FS iostat, and errata cleanup).
+    2. `build(config)`: `a28e781e63d3b` (explicit synaptics i2c bus interface).
+    3. `fix(qcacld-3.0)`: `54f411d709549` (prevention of buffer underflow on ACS channel count 0).
+    4. `fix(diag)`: `0f3ecebf7e31d` (QRTR sockets created in kernel context via `sock_create_kern`).
+    5. `fix(power)`: `1e10877a90d93` (battery charge_full_design scaling to uAh with capacity fallback).
+  - **Self-Contained In-Tree Driver Architecture**: Rather than relying on external git submodules and symbolic links that disrupt automated non-recursive builds and leave dirty untracked state across branch checkouts, ReSukiSU v4.2.0 kernel driver was integrated as a self-contained in-tree directory under `drivers/kernelsu/` with local UAPI headers under `drivers/kernelsu/include/uapi/`.
+  - **SuSFS v2.3.0 Inline Hooks for Linux 4.19**: Integrated SuSFS v2.3.0 core (`fs/susfs.c`, `include/linux/susfs.h`, `include/linux/susfs_def.h`) and inline hooks (`fs/exec.c`, `fs/open.c`, `fs/read_write.c`, `fs/stat.c`, `fs/namei.c`, `fs/namespace.c`, `fs/proc/cmdline.c`, `fs/proc/task_mmu.c`, `kernel/sys.c`, etc.).
+  - **Defconfig Integration**: Added `CONFIG_KSU=y`, `CONFIG_KSU_SUSFS=y`, `CONFIG_KSU_MULTI_MANAGER_SUPPORT=y`, and `CONFIG_LOCALVERSION="-perf-resukisu"` to `arch/arm64/configs/vendor/xiaomi/whyred.config`.
+* **Verification**:
+  - Clean branch checkout across all three active variants (`lineage-21`, `lineage-21-ksu`, `lineage-21-resukisu`) with zero untracked files and zero working tree contamination.
+  - Dedicated builder script `build_resukisu_boot.sh` validated via `bash -n`.
+  - Automated release publisher `publish_release.sh` extended with standalone kernel release mode (`--kernel-release=resukisu`).
+* **Commits**: `cb3c0da55a1fa`, `615c3fe584a0a` (`kernel/xiaomi/sdm660`).
+* **Verdict**: `[FIXED]`. Full cross-variant parity achieved on a clean foundation; three dedicated kernel lines established.

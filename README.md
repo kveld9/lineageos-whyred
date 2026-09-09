@@ -85,14 +85,29 @@ For the complete step-by-step walkthrough, prerequisites, and troubleshooting, s
 
 ---
 
-## Root: KernelSU Next & SuSFS
+## Kernel Variants & Root Solutions
 
-This ROM ships with a 100% clean, unrooted stock Linux 4.19 kernel (`boot.img`). If kernel-level root with stealth mount isolation (passing Play Integrity / CTS profile) is required:
+This project maintains three parallel Linux 4.19 kernel lines sharing the exact same verified hardware platform foundation:
 
-1. Flash the pre-patched boot image: `fastboot flash boot boot-ksu.img`
-2. Install the matching companion app: **KernelSU Next Manager v3.1.0** (`versionCode: 33024`).
+| Kernel Variant | Boot Image | Role & Philosophy | Companion App |
+| :--- | :--- | :--- | :--- |
+| **Canonical Stock** (`lineage-21`) | `boot.img` | 100% clean, unrooted upstream LineageOS reference baseline. Included inside ROM zip. | None |
+| **KernelSU Next + SuSFS 2.0.0** (`lineage-21-ksu`) | `boot-ksu.img` | Stable LTS daily driver. Manual hooks, proven VFS mount hiding, zero code churn. | [KernelSU Next Manager](https://github.com/KernelSU-Next/KernelSU-Next/releases) |
+| **ReSukiSU + SuSFS 2.3.0+** (`lineage-21-resukisu`) | `boot-resukisu.img` | Active bleeding-edge stealth line. Metamodules, multi-manager support, and advanced detection evasion. | [ReSukiSU Manager](https://github.com/ReSukiSU/ReSukiSU/releases) |
 
-For the complete configuration guide, Linux 4.19 non-GKI compatibility ceiling analysis, and recommended stealth settings, see the dedicated [KernelSU Next & SuSFS Guide](KERNELSU.md).
+### Flashing a Custom Kernel
+Flash the desired boot image via fastboot:
+```bash
+# Option A: Stable LTS Root
+fastboot flash boot boot-ksu.img
+
+# Option B: Bleeding-Edge Stealth Root
+fastboot flash boot boot-resukisu.img
+fastboot reboot
+```
+
+For the complete configuration guide and stealth settings, see the dedicated [KernelSU Next & SuSFS Guide](KERNELSU.md).
+
 
 ---
 
@@ -134,16 +149,20 @@ Flashable builds and recovery images are available under [GitHub Releases](https
 This repository provides fully automated pipelines to synchronize upstream LineageOS sources, apply whyred device trees, and build signed release ROM packages and boot images:
 
 ```bash
-# 1. Compile full LineageOS 21.0 ROM package
+# 1. Compile full LineageOS 21.0 ROM package (bundled with stock boot.img)
 ./build_whyred.sh --build
 
-# 2. Compile dedicated KernelSU Next + SuSFS boot image
+# 2. Compile dedicated KernelSU Next + SuSFS boot image (LTS stable)
 ./build_whyred.sh --build-ksu
 
-# 3. Publish release assets to GitHub
-./publish_release.sh
+# 3. Compile dedicated ReSukiSU + SuSFS boot image (Bleeding-edge stealth)
+./build_whyred.sh --build-resukisu
 
-# 4. Full end-to-end pipeline (Build ROM -> Build KSU -> Checksums -> GitHub Release)
+# 4. Publish release assets to GitHub
+./publish_release.sh                                # Standard ROM release
+./publish_release.sh --kernel-release=resukisu     # Standalone ReSukiSU kernel release
+
+# 5. Full end-to-end pipeline (Build ROM -> Build KSU -> Checksums -> GitHub Release)
 ./build_whyred.sh --all
 ```
 
