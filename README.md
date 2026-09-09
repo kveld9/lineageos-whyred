@@ -65,7 +65,8 @@ lineageos-whyred/
 | Guide | Scope |
 | :--- | :--- |
 | [Installation & Flashing Guide](INSTALL.md) | Clean flash walkthrough, recovery setup, and F2FS filesystem configuration |
-| [KernelSU Next & SuSFS Setup](KERNELSU.md) | Root installation, Linux 4.19 compatibility ceiling, and recommended stealth settings |
+| [KernelSU Next & SuSFS Setup](KERNELSU.md) | Stable LTS root installation, Linux 4.19 compatibility ceiling, and recommended stealth settings |
+| [ReSukiSU & SuSFS Setup](RESUKISU.md) | Bleeding-edge stealth root, multi-manager support, and advanced detection evasion |
 | [System Debloating Guide](DEBLOAT.md) | Automated debloat script usage, 102-package registry, and critical apps baseline |
 | [Building from Source Guide](BUILD.md) | Host dependencies, repo synchronization, ccache tuning, and build automation |
 | [Hardware Audit Registry](AUDIT_REGISTRY.md) | Empirical hardware diagnostics, telemetry logs, benchmarks, and regression gates |
@@ -106,7 +107,7 @@ fastboot flash boot boot-resukisu.img
 fastboot reboot
 ```
 
-For the complete configuration guide and stealth settings, see the dedicated [KernelSU Next & SuSFS Guide](KERNELSU.md).
+For complete configuration and stealth settings, see the dedicated [KernelSU Next Guide](KERNELSU.md) and [ReSukiSU Guide](RESUKISU.md).
 
 
 ---
