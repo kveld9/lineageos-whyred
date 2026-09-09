@@ -32,7 +32,7 @@ In accordance with `AGENTS.md` Section 13, this registry must be continuously ma
 | **Phase P6 KTweak Benchmark**| Comparative Evaluation of Community Magisk Profiles (KTweak Balance, Latency, Throughput) | `[APPLIED]` | sched_child_runs_first=1 cuts app launch latency by -6.9% (-35.6ms); tcp_fastopen=3 cuts handshake latency by -51.2% (61.3ms -> 29.9ms); KTweak CFS granularity (500us/100us) degrades switch latency by 58-346% (falsified) | Applied sched_child_runs_first=1, tcp_fastopen=3, and tcp_ecn=1 via common rootdir init.qcom.power.rc | `c1a03f6` (`sdm660-common`) |
 | **Phase P7 YAKT & thatKernel**| Comparative Evaluation of Community Profiles (YAKT & thatKernel) | `[APPLIED]` | page-cluster=0 accelerates app cold start by -19.2ms (Settings) and -50.2ms (Vivaldi) by eliminating 32KB zRAM decompression readahead; sched_migration_cost_ns=50000 cuts cross-cluster switch latency by -79.7% (76.9us -> 15.6us) at -7.2% compute cost; sched_schedstats=0 falsified (zero gain) | Applied page-cluster=0 and sched_migration_cost_ns=50000 via common rootdir init.qcom.power.rc | `49b08b7` (`sdm660-common`) |
 | **Phase P8 UI & Net Optimization**| System-Level Background Blur Disabling & TCP Idle CWND Preservation | `[APPLIED]` | Background blur disabled in vendor.prop and framework overlay (eliminates Adreno 509 multi-pass Gaussian blur jank); tcp_slow_start_after_idle=0 applied in rootdir power init | Applied ro.surface_flinger.supports_background_blur=0, ro.sf.blurs_are_expensive=1, config_backgroundBlurSupported=false, and tcp_slow_start_after_idle=0 | `6719c31` (`sdm660-common`) |
-| **Gate KERNEL-VAR** | Multi-Variant Kernel Parity: ReSukiSU + SuSFS v2.3.0 Integration | `[FIXED]` | Integration of ReSukiSU on clean `lineage-21` foundation with full cross-variant parity | In-tree self-contained `drivers/kernelsu`, clean SuSFS v2.3.0 inline hooks, defconfig synced, 5 platform fixes inherited | `cb3c0da`, `615c3fe` (`kernel`) |
+| **Gate KERNEL-VAR** | Multi-Variant Kernel Parity: ReSukiSU + SuSFS v2.3.0 Integration | `[PASS]` | Integration and empirical compilation of ReSukiSU v4.2.0 + SuSFS v2.3.0 boot image on clean foundation | In-tree self-contained `drivers/kernelsu`, clean SuSFS v2.3.0 inline hooks, defconfig synced, 5 platform fixes inherited, boot-resukisu.img built (04:35) | `cb3c0da`, `615c3fe`, `5242cb6`, `eaf19fe` (`kernel`) |
 
 
 ---
@@ -711,6 +711,8 @@ In accordance with `AGENTS.md` Section 13, this registry must be continuously ma
 * **Verification**:
   - Clean branch checkout across all three active variants (`lineage-21`, `lineage-21-ksu`, `lineage-21-resukisu`) with zero untracked files and zero working tree contamination.
   - Dedicated builder script `build_resukisu_boot.sh` validated via `bash -n`.
+  - In-tree compilation fix applied in `drivers/kernelsu/Kbuild` (`5242cb65869e0`) and UAPI feature flag `KSU_FEATURE_WEBVIEW_ZYGOTE_UMOUNT` added to `include/uapi/feature.h` (`eaf19fefb5b4e`).
+  - Empirical compilation succeeded via `mka bootimage` (04:35 mm:ss) generating `out/target/product/whyred/boot-resukisu.img` (25MB, SHA-256: `5aa5c776cb052fe52aec0886c9e0d88f601b68c4f66bf83fd9e66d4e54c4e6af`) and updated stripped WLAN driver `out/target/product/whyred/vendor/lib/modules/wlan.ko` (8.8MB).
   - Automated release publisher `publish_release.sh` extended with standalone kernel release mode (`--kernel-release=resukisu`).
-* **Commits**: `cb3c0da55a1fa`, `615c3fe584a0a` (`kernel/xiaomi/sdm660`).
-* **Verdict**: `[FIXED]`. Full cross-variant parity achieved on a clean foundation; three dedicated kernel lines established.
+* **Commits**: `cb3c0da55a1fa`, `615c3fe584a0a`, `5242cb65869e0`, `eaf19fefb5b4e` (`kernel/xiaomi/sdm660`).
+* **Verdict**: `[PASS]`. Full cross-variant parity achieved on a clean foundation; ReSukiSU + SuSFS v2.3.0 boot image cleanly compiled and verified.
