@@ -22,6 +22,7 @@ In accordance with `AGENTS.md` Section 13, this registry must be continuously ma
 | **Fase O** | Wi-Fi (`qcacld-3.0`), SoftAP, ACS, Concurrency | `[FIXED]` | 1) SoftAP failed with 5GHz STA; 2) Kernel buffer underflow | 1) Enable MCC in ini; 2) Add ACS channel bounds check | `503e134` (`sdm660-common`), `2fb1c8a829be` / `54f411d70954` (`kernel`) |
 | **Gate SEC/BUILD**| Developer Options, System Properties, SELinux | `[FIXED]` | Settings crash on Developer Options launch | Resolved by canonical `user` reflash (`ro.debuggable=0`) | 0 source changes |
 | **Gate REL/BUILD**| Release Packaging, Non-A/B Zip Generation | `[FIXED]` | Symlinks broken in non-A/B zip; test-keys display | Add `-y` flag in releasetools; default to release-keys | `4f5bdcdc99`, `d80b1cf7de` (`build/make`) |
+| **Gate USB** | USB DWC3, Gadget Modes, Host OTG, Off-Mode Chg | `[PASS]` | None | All gadget functions, OTG host enumeration, 5x plug & 3x OTG cycles validated | 0 changes |
 
 ---
 
@@ -137,7 +138,7 @@ In accordance with `AGENTS.md` Section 13, this registry must be continuously ma
   - Suspend behavior analysis under USB connected vs disconnected states.
 * **Defects Identified & Solutions**:
   1. *Capacity Reporting*: Fixed `charge_full_design` scaling to microampere-hours and added fallback capacity computation in kernel battery driver (`7840eba87cb9`).
-  2. *USB Suspend Behavior*: Documented that the Synopsys DWC3 controller returns `-16` (`-EBUSY`) in `platform_pm_suspend` exclusively when an active USB host connection (ADB) is enumerating and polling SOF packets. This was characterized as expected hardware behavior under active ADB.
+  2. *USB Suspend Behavior*: Documented that the Synopsys DWC3 controller returns `-16` (`-EBUSY`) in `platform_pm_suspend` when an active USB host connection (ADB) is maintained. The evidence indicates this corresponds to the expected behavior of the DWC3 controller under active host configuration rather than a driver failure.
 * **Verdict**: `[PASS CARACTERIZADO]`. Power management, JEITA protection curves, and fuel gauge reporting validated.
 
 ---
@@ -196,3 +197,23 @@ In accordance with `AGENTS.md` Section 13, this registry must be continuously ma
   1. *Broken Symlinks in Non-A/B Zips*: In non-A/B target packages, standard zip packaging stripped symlinks. Resolved in `build/make` by adding `-y` to zip command invocations in releasetools (`4f5bdcdc99`).
   2. *Build Tags Default*: System properties defaulted to `test-keys` even when custom signing keys were configured. Resolved by checking certificate availability and defaulting to `release-keys` (`d80b1cf7de`).
 * **Verdict**: `[FIXED]`. Deterministic, cryptographically signed, and flashable non-A/B release packages.
+
+---
+
+### 13. USB, OTG & Synopsys DWC3 Subsystem (Gate USB)
+* **Scope**: Synopsys DWC3 USB controller (`a800000.dwc3`), USB ConfigFS gadget functions, host mode OTG (`dr_mode = "otg"`), VBUS boost delivery, off-mode charging architecture, and suspend/resume lifecycle.
+* **Test Procedures**:
+  - Gadget function switching via `svc usb setFunctions` across ADB, MTP+ADB, PTP+ADB, MIDI+ADB, and RNDIS/Tethering, validating descriptors on host xHCI controller.
+  - Physical cable disconnection and reconnection stress test (5 complete cycles) auditing UDC unbind/bind and `android_usb` uevents.
+  - Physical OTG host mode validation (3 complete connect/disconnect cycles) using a Micro-USB OTG adapter with an external USB peripheral (Compx VXE Mouse Dongle `0x3554:0xf58e`).
+  - Battery service charging state validation under VBUS detection (5V / 500mA SDP rail).
+  - Suspend and resume verification under USB connected vs disconnected states.
+  - Reboot test with active USB connection (`adb reboot`) verifying clean re-enumeration into `boot_completed=1`.
+  - Source and runtime audit of off-mode charging (`vendor.charger`).
+* **Findings**:
+  - All USB gadget compositions enumerated with expected VID:PIDs (`18d1:4ee7` ADB, `18d1:4ee2` MTP+ADB, `18d1:4ee6` PTP+ADB, `18d1:4ee9` MIDI+ADB, `05c6:9024` RNDIS+ADB).
+  - Physical OTG mode enabled 5V VBUS boost, enumerated the peripheral under `/dev/bus/usb/001/002` across all 3 cycles (`host_manager.num_connects = 6`), and switched cleanly back to peripheral mode when connected to PC host.
+  - Off-mode charging is fully implemented in tree via `vendor.charger` (`android.hardware.health-service.qti --charger`) under `class charger`.
+  - Phase M correlation: The evidence obtained indicates that the `-EBUSY` (`-16`) return in `platform_pm_suspend` observed during Phase M corresponds to the expected behavior of the DWC3 controller when an active USB configuration is maintained with an active host, and it did not manifest as a functional defect during this audit.
+  - Zero crashes in `logcat -b crash`, zero controller timeouts or starvation events.
+* **Verdict**: `[PASS]`. Subsystem fully validated; zero modifications required (0 code changes, 0 commits).
