@@ -714,5 +714,12 @@ In accordance with `AGENTS.md` Section 13, this registry must be continuously ma
   - In-tree compilation fix applied in `drivers/kernelsu/Kbuild` (`5242cb65869e0`) and UAPI feature flag `KSU_FEATURE_WEBVIEW_ZYGOTE_UMOUNT` added to `include/uapi/feature.h` (`eaf19fefb5b4e`).
   - Empirical compilation succeeded via `mka bootimage` (04:35 mm:ss) generating `out/target/product/whyred/boot-resukisu.img` (25MB, SHA-256: `5aa5c776cb052fe52aec0886c9e0d88f601b68c4f66bf83fd9e66d4e54c4e6af`) and updated stripped WLAN driver `out/target/product/whyred/vendor/lib/modules/wlan.ko` (8.8MB).
   - Automated release publisher `publish_release.sh` extended with standalone kernel release mode (`--kernel-release=resukisu`).
+  - **On-Device Physical Hardware Validation** (`whyred`):
+    - Flashed `boot-resukisu.img` to `/dev/block/bootdevice/by-name/boot` (verified bit-for-bit SHA-256: `5aa5c776cb052fe52aec0886c9e0d88f601b68c4f66bf83fd9e66d4e54c4e6af`).
+    - Device booted cleanly into Android 14 (`sys.boot_completed=1`).
+    - WiFi subsystem online (`wlan0` UP, vermagic matched to `4.19.325-cip132-st16-perf-resukisu-geaf19fefb5b4`).
+    - Kernel telemetry confirmed: `KernelSU: Initialized with driver version: 35115, full_version: v4.2.0-in-tree@ReSukiSU, ABI: aarch64, Work mode: Built-in`.
+    - SuSFS telemetry confirmed: `susfs: susfs is initialized! version: v2.3.0`, `/sdcard is decrypted`.
+    - Root execution verified: `su -c id` -> `uid=0(root) gid=0(root) groups=0(root) context=u:r:ksu:s0`.
 * **Commits**: `cb3c0da55a1fa`, `615c3fe584a0a`, `5242cb65869e0`, `eaf19fefb5b4e` (`kernel/xiaomi/sdm660`).
-* **Verdict**: `[PASS]`. Full cross-variant parity achieved on a clean foundation; ReSukiSU + SuSFS v2.3.0 boot image cleanly compiled and verified.
+* **Verdict**: `[PASS]`. Full cross-variant parity achieved; ReSukiSU v4.2.0 + SuSFS v2.3.0 boot image compiled, flashed, and physically validated on hardware with zero defects.
