@@ -2,18 +2,6 @@
 
 Unofficial Android 14 (LineageOS 21.0) port powered by Linux Kernel 4.19 (`4.19.325`) for Xiaomi Redmi Note 5 Pro / AI (`whyred`).
 
-## Device Specifications
-
-| Component | Specification |
-| :--- | :--- |
-| **SoC** | Qualcomm Snapdragon 660 (SDM660) |
-| **CPU** | 8x Kryo 260 (up to 2.2 GHz) |
-| **GPU** | Adreno 512 |
-| **Memory** | 3 GB / 4 GB / 6 GB LPDDR4X |
-| **Storage** | 32 GB / 64 GB eMMC 5.1 |
-| **Display** | 1080 x 2160 pixels, 18:9 ratio |
-| **Battery** | 4000 mAh |
-
 ---
 
 ## Why LineageOS?
@@ -46,7 +34,7 @@ This repository orchestrates the build environment, local manifests, documentati
 | **Root Orchestration** | `.` | — | [`kveld9/lineageos-whyred`](https://github.com/kveld9/lineageos-whyred) (`main`) |
 | **Device Tree** | `device/xiaomi/whyred` | LineageOS 20 | [`kveld9/android_device_xiaomi_whyred`](https://github.com/kveld9/android_device_xiaomi_whyred) (`lineage-21`) |
 | **Vendor Blobs** | `vendor/xiaomi/whyred` | TheMuppets 20 | [`kveld9/proprietary_vendor_xiaomi_whyred`](https://github.com/kveld9/proprietary_vendor_xiaomi_whyred) (`lineage-21`) |
-| **Kernel Source** | `kernel/xiaomi/sdm660` | LineageOS 21 | [`kveld9/android_kernel_xiaomi_sdm660`](https://github.com/kveld9/android_kernel_xiaomi_sdm660) (`lineage-21`) |
+| **Kernel Source** | `kernel/xiaomi/sdm660` | LineageOS 21 | [`kveld9/android_kernel_xiaomi_sdm660`](https://github.com/kveld9/android_kernel_xiaomi_sdm660) (`lineage-21`, `lineage-21-ksu`) |
 | **Common Device Tree** | `device/xiaomi/sdm660-common` | LineageOS 21 | [`kveld9/android_device_xiaomi_sdm660-common`](https://github.com/kveld9/android_device_xiaomi_sdm660-common) (`lineage-21`) |
 | **Common Vendor Tree** | `vendor/xiaomi/sdm660-common` | TheMuppets 21 | Upstream (`lineage-21`) |
 | **Build System** | `build/make` | LineageOS 21 | [`kveld9/android_build`](https://github.com/kveld9/android_build) (`lineage-21.0`) |
