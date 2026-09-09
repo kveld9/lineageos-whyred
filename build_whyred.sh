@@ -45,6 +45,10 @@ case "${ACTION}" in
         echo "Building dedicated KernelSU boot image..."
         ./build_ksu_boot.sh
         ;;
+    --build-resukisu)
+        echo "Building dedicated ReSukiSU boot image..."
+        ./build_resukisu_boot.sh
+        ;;
     --publish)
         shift 1 || true
         ./publish_release.sh "$@"
@@ -69,10 +73,11 @@ case "${ACTION}" in
         echo ""
         echo " Available options:"
         echo "   mka bacon                 (Compile ROM manually)"
-        echo "   ./build_whyred.sh --build       (Run mka bacon)"
-        echo "   ./build_whyred.sh --build-ksu   (Build boot-ksu.img)"
-        echo "   ./build_whyred.sh --publish     (Publish release to GitHub)"
-        echo "   ./build_whyred.sh --all         (Build ROM + KSU boot + Auto-publish)"
+        echo "   ./build_whyred.sh --build           (Run mka bacon)"
+        echo "   ./build_whyred.sh --build-ksu       (Build boot-ksu.img)"
+        echo "   ./build_whyred.sh --build-resukisu  (Build boot-resukisu.img)"
+        echo "   ./build_whyred.sh --publish         (Publish release to GitHub)"
+        echo "   ./build_whyred.sh --all             (Build ROM + KSU boot + Auto-publish)"
         echo "=========================================================="
         ;;
 esac
