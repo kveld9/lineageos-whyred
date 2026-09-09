@@ -30,7 +30,7 @@ In accordance with `AGENTS.md` Section 13, this registry must be continuously ma
 | **Fase P3.2.5** | Official San-Kernel Revenant R1.1.108 Boot Gate | `[FAIL]` | Official binary release hangs at splash ("Redmi") | Falsified rebuild hypothesis; confirmed official release non-bootable on device; rollback to stock verified | 0 changes |
 | **Phase P5 Live Tunables**| Live Kernel Runtime Optimization Matrix (I/O, Sched, VM, zRAM, HWUI) | `[APPLIED]` | CFS 4ms cuts cross-cluster switch latency by 85% (105us -> 15.7us); dirty 10/5 improves eMMC write +4.3%; mq-deadline reduces latency drops; F2FS iostat, server errata, and PLT trampolines removed | Applied runtime tunables in device init and static defconfig optimizations across both kernel branches | `fd083a4` (`sdm660-common`), `27bc893` / `6308990` (`kernel`) |
 | **Phase P6 KTweak Benchmark**| Comparative Evaluation of Community Magisk Profiles (KTweak Balance, Latency, Throughput) | `[APPLIED]` | sched_child_runs_first=1 cuts app launch latency by -6.9% (-35.6ms); tcp_fastopen=3 cuts handshake latency by -51.2% (61.3ms -> 29.9ms); KTweak CFS granularity (500us/100us) degrades switch latency by 58-346% (falsified) | Applied sched_child_runs_first=1, tcp_fastopen=3, and tcp_ecn=1 via common rootdir init.qcom.power.rc | `c1a03f6` (`sdm660-common`) |
-| **Phase P7 YAKT & thatKernel**| Comparative Evaluation of Community Profiles (YAKT & thatKernel) | `[NOMINAL]` | page-cluster=0 accelerates app cold start by -19.2ms (Settings) and -50.2ms (Vivaldi) by eliminating 32KB zRAM decompression readahead; sched_migration_cost_ns=50000 cuts cross-cluster switch latency by -79.7% (76.9us -> 15.6us) at -7.2% compute cost; sched_schedstats=0 falsified (zero gain) | Characterized 2 evaluation suites on physical hardware; baseline restored | 0 changes |
+| **Phase P7 YAKT & thatKernel**| Comparative Evaluation of Community Profiles (YAKT & thatKernel) | `[APPLIED]` | page-cluster=0 accelerates app cold start by -19.2ms (Settings) and -50.2ms (Vivaldi) by eliminating 32KB zRAM decompression readahead; sched_migration_cost_ns=50000 cuts cross-cluster switch latency by -79.7% (76.9us -> 15.6us) at -7.2% compute cost; sched_schedstats=0 falsified (zero gain) | Applied page-cluster=0 and sched_migration_cost_ns=50000 via common rootdir init.qcom.power.rc | `49b08b7` (`sdm660-common`) |
 
 
 ---
@@ -668,8 +668,10 @@ In accordance with `AGENTS.md` Section 13, this registry must be continuously ma
   1. **Validated Positive Finding - `page-cluster = 0`**: Directly accelerates application cold starts by **-19.2 ms** (Settings) and **-50.2 ms** (Vivaldi Browser) by preventing zRAM from decompressing 7 unneeded pages per fault. Canonical optimization for zRAM devices with zero downside.
   2. **Validated Trade-off Finding - `sched_migration_cost_ns = 50000`**: Reduces cross-cluster context switch latency by **-79.73% (-61.30 us)** and eliminates migration jitter spikes, at the cost of **-7.24%** synthetic 8-core sustained throughput due to more frequent inter-cluster migrations. Highly beneficial for interactive UI responsiveness.
   3. **Empirical Falsification - `sched_schedstats = 0`**: Demonstrated no measurable latency benefit on Kryo 260 cores (78.8 us vs 101.6 us).
-* **Restoration Verification**: All tested sysctl nodes (`sched_migration_cost_ns = 500000`, `page-cluster = 3`, `sched_schedstats = 1`) were verified restored to default baseline values upon benchmark completion.
-* **Verdict**: `[NOMINAL]`. Complete evaluation executed on physical hardware, findings characterized and documented with zero code drift.
+* **Applied Remediations & Commit**:
+  - `page-cluster = 0` and `sched_migration_cost_ns = 50000` were integrated into `device/xiaomi/sdm660-common/rootdir/etc/init.qcom.power.rc` under `on property:sys.boot_completed=1` to guarantee consistent execution across all booted kernel variants (stock and KernelSU).
+  - Commit: `49b08b7` (`device/xiaomi/sdm660-common`).
+* **Verdict**: `[APPLIED]`. Validated positive tunables committed to canonical Android userspace init; sched_schedstats=0 and hazardous memory settings discarded.
 
 
 
