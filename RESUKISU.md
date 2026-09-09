@@ -44,11 +44,6 @@ Download the matching companion manager APK from the official upstream repositor
 * **Alternative Supported App:** [SukiSU-Ultra Manager](https://github.com/SukiSU-Ultra/SukiSU-Ultra/releases)
 * **Latest Official Release:** [ReSukiSU GitHub Releases](https://github.com/ReSukiSU/ReSukiSU/releases)
 
-Install the APK via ADB or your on-device file manager:
-```bash
-adb install -r ReSukiSU_v4.2.0_*-release.apk
-```
-
 ---
 
 ### 3. Verify Active Status and Stealth Telemetry

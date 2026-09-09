@@ -33,11 +33,6 @@ Download the exact matching v3.1.0 companion manager APK:
 * **Asset Name:** `KernelSU_Next_v3.1.0_33024-release.apk`
 * **Official Upstream Release:** [KernelSU-Next v3.1.0 Releases](https://github.com/KernelSU-Next/KernelSU-Next/releases/tag/v3.1.0)
 
-Install the APK via ADB or your on-device file manager:
-```bash
-adb install -r KernelSU_Next_v3.1.0_33024-release.apk
-```
-
 ### 3. Verify Active Status and Stealth
 Open the KernelSU Next Manager application on the device.
 The status card should indicate:
