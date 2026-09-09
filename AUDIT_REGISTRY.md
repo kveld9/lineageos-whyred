@@ -29,7 +29,7 @@ In accordance with `AGENTS.md` Section 13, this registry must be continuously ma
 | **Fase P4 Baseline**| Stock Kernel Physical Benchmark Suite (M01-M10) | `[PASS]` | None (nominal baseline) | 10 dimensions executed, raw series recorded and JSON archived | `54f411d70954` (`kernel`) |
 | **Fase P3.2.5** | Official San-Kernel Revenant R1.1.108 Boot Gate | `[FAIL]` | Official binary release hangs at splash ("Redmi") | Falsified rebuild hypothesis; confirmed official release non-bootable on device; rollback to stock verified | 0 changes |
 | **Phase P5 Live Tunables**| Live Kernel Runtime Optimization Matrix (I/O, Sched, VM, zRAM, HWUI) | `[APPLIED]` | CFS 4ms cuts cross-cluster switch latency by 85% (105us -> 15.7us); dirty 10/5 improves eMMC write +4.3%; mq-deadline reduces latency drops; F2FS iostat, server errata, and PLT trampolines removed | Applied runtime tunables in device init and static defconfig optimizations across both kernel branches | `fd083a4` (`sdm660-common`), `27bc893` / `6308990` (`kernel`) |
-| **Phase P6 KTweak Benchmark**| Comparative Evaluation of Community Magisk Profiles (KTweak Balance, Latency, Throughput) | `[NOMINAL]` | sched_child_runs_first=1 cuts app launch latency by -6.9% (-35.6ms); tcp_fastopen=3 cuts handshake latency by -51.2% (61.3ms -> 29.9ms); KTweak CFS granularity (500us/100us) degrades switch latency by 58-346% (falsified) | Characterized 3 evaluation suites directly on physical hardware; baseline restored | 0 changes |
+| **Phase P6 KTweak Benchmark**| Comparative Evaluation of Community Magisk Profiles (KTweak Balance, Latency, Throughput) | `[APPLIED]` | sched_child_runs_first=1 cuts app launch latency by -6.9% (-35.6ms); tcp_fastopen=3 cuts handshake latency by -51.2% (61.3ms -> 29.9ms); KTweak CFS granularity (500us/100us) degrades switch latency by 58-346% (falsified) | Applied sched_child_runs_first=1, tcp_fastopen=3, and tcp_ecn=1 via common rootdir init.qcom.power.rc | `c1a03f6` (`sdm660-common`) |
 
 
 ---
@@ -620,7 +620,9 @@ In accordance with `AGENTS.md` Section 13, this registry must be continuously ma
   2. **Validated Positive Finding - Bidirectional TCP FastOpen (`tcp_fastopen = 3`) & ECN (`tcp_ecn = 1`)**: Reduces TCP handshake latency by **-51.2% (-31.4 ms)** by enabling data payload exchange in initial SYN packets.
   3. **Critical Security Caveat - SYN Cookies**: KTweak sets `tcp_syncookies = 0`, exposing the device to Denial of Service via SYN flood attacks; `tcp_syncookies = 1` must be strictly retained.
   4. **Major Falsification - KTweak Granularity Thrashing**: KTweak's assumption that reducing `sched_min_granularity_ns` to 500us or 100us minimizes latency is **empirically falsified**. On the 8-core SDM660, tight sub-millisecond slices trigger excessive timer interrupts and register save/restore overhead, making thread switching **4.5x slower (68.7 us vs 15.4 us)** and reducing multi-core compute by **-6.8%**. Whyred's 1 ms granularity is verified optimal.
-* **Restoration Verification**: All parameters across Suites A, B, and C were verified restored to baseline values at benchmark completion.
-* **Verdict**: `[NOMINAL]`. Complete 3-suite community tuning matrix characterized, falsified, and documented with zero code drift.
+* **Applied Remediations & Commit**:
+  - `sched_child_runs_first = 1`, `tcp_fastopen = 3`, and `tcp_ecn = 1` were integrated into `device/xiaomi/sdm660-common/rootdir/etc/init.qcom.power.rc` under `on property:sys.boot_completed=1` to guarantee consistent execution across all booted kernel variants (stock and KernelSU).
+  - Commit: `c1a03f6` (`device/xiaomi/sdm660-common`).
+* **Verdict**: `[APPLIED]`. Positive tunables safely committed to canonical Android init layer; falsified granularity and insecure syncookies settings discarded.
 
 
