@@ -82,18 +82,31 @@ su -c id
 
 ---
 
-## Recommended Manager Settings
+## Recommended ReSukiSU Manager Settings
 
-To ensure maximum stealth, security, and banking app compatibility (passing Google Play Integrity and SafetyNet / MEETS_DEVICE_INTEGRITY):
+To ensure maximum stealth (bypassing root and mount detection), system security, and banking app compatibility (passing Google Play Integrity and SafetyNet / `MEETS_DEVICE_INTEGRITY`), configure the settings in **ReSukiSU Manager** as follows:
 
-| Setting / Feature | Recommended State | Technical Rationale |
-| :--- | :--- | :--- |
-| **Umount modules by default** | **ENABLED (ON)** | Unmounts overlayfs and module paths in non-root application namespaces. Critical for app isolation. |
-| **Kernel Umount** | **ENABLED (ON)** | Preserves kernel-level unmounting for Zygote and app processes. Must remain active. |
-| **WebView Zygote Umount** | **ENABLED (ON)** | Automatically isolates WebView rendering processes from root mounts. |
-| **SELinux Mode** | **ENFORCING** | Keeps kernel SELinux security active. Never set to Permissive on production devices. |
-| **AVC Spoofing / Logging Mask** | **ENABLED (ON)** | Intercepts and masks audit denial messages in kernel log buffers. |
-| **Su Compatibility Mode** | **ENABLED (ON)** | Provides standard `/system/bin/su` path for root-authorized applications. |
+| Setting / Toggle | Location | Recommended State | Technical Rationale |
+| :--- | :--- | :--- | :--- |
+| **Module unmounting** | Settings &rarr; Configure | **ENABLED (ON)** | Automatically unmounts overlayfs and module paths in non-root application namespaces. Critical for process isolation. |
+| **Classic su command** | Settings &rarr; Configure | **Default / Enabled** | Provides standard `/system/bin/su` path for root-authorized applications. Only disable if acting as an emergency root kill-switch. |
+| **Auto jailbreak** | Settings &rarr; Configure | **DISABLED (OFF)** | Prevents newly installed applications from automatically receiving root access without explicit user authorization prompts. |
+| **ADB Root** | Settings &rarr; Configure | **DISABLED (OFF)** | Keeps ADB shell unprivileged (`shell`) by default, preventing unauthorized root privilege escalation over USB debugging. |
+| **Hide SUS Mounts for Non-SU Procs** | Settings &rarr; SuSFS Config &rarr; Standard Features | **ENABLED (ON)** | **CRITICAL**: Enforces SuSFS kernel-level hiding of all suspicious mount points for non-root processes, bypassing manager umount limits. |
+| **AVC Log Spoofing** | Settings &rarr; SuSFS Config &rarr; Standard Features | **ENABLED (ON)** | **CRITICAL**: Spoofs `su` context in kernel audit denial (`avc: denied`) messages to prevent apps from detecting root through audit logs or `dmesg`. |
+| **Logging** | Settings &rarr; SuSFS Config &rarr; Standard Features | **DISABLED (OFF)** | Disables SuSFS debug logging to prevent unnecessary I/O overhead on eMMC 5.1 storage and eliminate forensic log artifacts. |
+| **SU Log** | Settings &rarr; General | **DISABLED (OFF)** | Avoids writing superuser execution logs to disk, reducing flash memory wear and eliminating local root access trails. |
+| **SELinux Permissive** | Settings &rarr; Developer | **DISABLED (OFF)** | **CRITICAL**: Keeps SELinux strictly **Enforcing**. Setting Permissive immediately trips Google Play Integrity and flags the device in financial apps. |
+| **Check beta updates** | Settings &rarr; Updates | **DISABLED (OFF)** | Prevents the manager from prompting or auto-installing experimental main-branch builds that may disrupt stability on Linux 4.19. |
+
+### Understanding Home Screen "Seccomp status: Disabled"
+
+In the ReSukiSU Manager Home screen, the status card reports `Seccomp status: Disabled`. This is an **intentional design characteristic** and **not a system defect**:
+
+* **Process-Local Inspection:** The manager inspects Seccomp status strictly for its own calling process via `prctl(PR_GET_SECCOMP)`.
+* **Privileged Syscall Unblocking:** On Linux kernels prior to 5.10 (such as Linux 4.19 LTS on `whyred`), the ReSukiSU kernel driver explicitly invokes `disable_seccomp()` for root-authorized processes and the manager itself. This prevents Android's Zygote BPF sandbox from terminating root operations (such as mount manipulation or reboot calls) with `SIGSYS`.
+* **System-Wide Sandboxing Active:** All non-root applications and standard userspace services (`system_server`, `SystemUI`, browser, third-party apps) remain strictly enforced under `Seccomp: 2` (Filter Mode) by Android Zygote.
+
 
 ---
 
