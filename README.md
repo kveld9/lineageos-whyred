@@ -50,85 +50,27 @@ This repository orchestrates the build environment, local manifests, documentati
 
 ---
 
-## Flashing Instructions
+## Installation & Flashing
 
-### Recommended Filesystem for `/data` (F2FS)
-This ROM supports both **F2FS** and **EXT4** for `/data` (`/userdata`). 
-Due to the architecture of eMMC 5.1 storage, **F2FS (Flash-Friendly File System)** is strongly recommended for significantly better random I/O performance and reduced database write latency.
+For clean installation and storage formatting:
+1. Boot to Fastboot: `adb reboot bootloader`
+2. Flash recovery: `fastboot flash recovery recovery.img` and boot into recovery.
+3. Sideload ROM: `adb sideload lineage-21.0-*-UNOFFICIAL-whyred.zip`
+4. Format `/data` to **F2FS** (Mandatory for FBE migration and maximum I/O performance on eMMC 5.1).
+5. Reboot to system.
 
-### Step-by-Step Installation Guide
+For the complete step-by-step walkthrough, prerequisites, and troubleshooting, see the dedicated [Installation Guide](INSTALL.md).
 
-1. **Reboot to Fastboot Mode**:
-   ```bash
-   adb reboot bootloader
-   ```
-2. **Flash Recovery Image**:
-   ```bash
-   fastboot flash recovery recovery.img
-   fastboot reboot recovery
-   ```
-3. **Flash ROM Package**:
-   - In Recovery, select **Apply Update** > **Apply from ADB**:
-   ```bash
-   adb sideload lineage-21.0-*-UNOFFICIAL-whyred.zip
-   ```
-4. **Reboot Recovery**:
-   - In Recovery, select **Advanced** > **Reboot to Recovery** (ensures all newly flashed partition tables and kernel flags reload).
-5. **Format `/data` to F2FS** (Mandatory for FBE migration and maximum I/O performance):
-   - In Recovery (OrangeFox / TWRP / Lineage Recovery):
-     - Go to **Wipe / Manage Partitions** > select **Data**.
-     - Choose **Change File System** > select **F2FS**.
-     - Perform **Format Data** (type `yes` to confirm).
-6. **Reboot to System**:
-   - Reboot device into Android 14. First boot will take 2–3 minutes to initialize encryption keys.
+---
 
-### Optional: Root with KernelSU Next + SuSFS
+## Root: KernelSU Next & SuSFS
 
-This ROM ships with a 100% clean stock unrooted kernel (`boot.img`). If you require root access with clean Play Integrity / SafetyNet pass:
+This ROM ships with a 100% clean, unrooted stock Linux 4.19 kernel (`boot.img`). If kernel-level root with stealth mount isolation (passing Play Integrity / CTS profile) is required:
 
-1. **Flash KernelSU Next Boot Image**:
-   ```bash
-   fastboot flash boot boot-ksu.img
-   fastboot reboot
-   ```
-2. **Install KernelSU Next Manager**:
-   - Download the matching v3.1.0 manager APK (version **v3.1.0**, `versionCode: 33024`, `KernelSU_Next_v3.1.0_33024-release.apk`) from official [KernelSU-Next v3.1.0 Releases](https://github.com/KernelSU-Next/KernelSU-Next/releases/tag/v3.1.0).
-   - Install via ADB:
-     ```bash
-     adb install -r KernelSU_Next_v3.1.0_33024-release.apk
-     ```
-3. **Verify SuSFS Integration**:
-   - Open KernelSU Next Manager. Status will indicate active root and kernel-level mount hiding via SuSFS.
+1. Flash the pre-patched boot image: `fastboot flash boot boot-ksu.img`
+2. Install the matching companion app: **KernelSU Next Manager v3.1.0** (`versionCode: 33024`).
 
-#### Non-GKI Architecture & Compatibility Ceiling (Linux 4.19)
-
-Whyred (Snapdragon 660) operates on **Linux Kernel 4.19**, which belongs to the legacy **non-GKI** (Generic Kernel Image) Android architecture:
-
-- **Non-GKI vs. GKI 2.0:**
-  Starting in Android 12 (Linux 5.10 / 6.1+), Google enforces GKI with standardized KMI (Kernel Module Interface). Modern SuSFS (v2.1+) and recent root frameworks rely heavily on GKI runtime live-patching and modern eBPF/Kprobe facilities. In non-GKI 4.19 kernels, SuSFS must be statically integrated at compile-time using de-inlined manual hooks across core subsystems (VFS in `fs/namei.c`, `fs/readdir.c`, `fs/namespace.c`, reboot dispatcher in `kernel/reboot.c`, and SELinux).
-- **The Absolute Compatibility Ceiling:**
-  - In upstream `KernelSU-Next`, all versions beyond `v3.1.0-legacy-susfs` (such as `v3.2.0-legacy` and legacy `HEAD`) completely eliminated `CONFIG_KSU_SUSFS` and dropped SuSFS integration.
-  - In `susfs4ksu`, non-GKI Linux 4.19 is supported only up to **v2.0.0** (newer versions require GKI 6.1+).
-  - Therefore, the combination of **KernelSU Next v3.1.0-legacy-susfs** + **SuSFS v2.0.0** is the absolute highest achievable compatibility ceiling for Linux 4.19 non-GKI.
-- **Why Manager v3.1.0 (33024) is Required:**
-  KernelSU Next v3 completely replaced the legacy `prctl(0xdeadbeef, ...)` communication channel from v0.x/v1.x with an anonymous-inode file descriptor supercall subsystem (`ksu_install_fd` dispatched via `sys_reboot`). The exact matching companion app is **KernelSU Next Manager v3.1.0** (`versionCode: 33024`). Newer managers (such as v3.3.0) enforce UAPI version 2 (driver version >= 33188) and trigger UAPI version mismatch warnings when paired with the legacy 33024 driver.
-
-#### Recommended KernelSU Next Manager Settings
-
-To maintain maximum stealth (bypassing root/mount detection), security, and banking app compatibility (Play Integrity / CTS pass), configure the settings in **KernelSU Next Manager** as follows:
-
-| Setting / Toggle | Location | Recommended State | Technical Rationale |
-| :--- | :--- | :--- | :--- |
-| **Umount modules by default** | Settings &rarr; General | **ENABLED (ON)** | Ensures module mount points (`/debug_ramdisk`, overlayfs, and bind mounts) are unmounted by default in non-root app namespaces. Essential for app isolation. |
-| **Disable su compat** | Settings &rarr; General | **DISABLED (OFF)** | Leaves `/system/bin/su` active for authorized root apps. Only turn ON as an emergency kill-switch to temporarily revoke all root access without rebooting. |
-| **Disable kernel umount** | Settings &rarr; General *(Dev)* | **DISABLED (OFF)** | **CRITICAL**: Turning this ON disables kernel-level unmounting, which directly breaks SuSFS stealth and exposes module mounts to Zygote and app processes. Must remain **OFF** so kernel umount stays active. |
-| **Disable avc spoofing** | Settings &rarr; General *(Dev)* | **DISABLED (OFF)** | **CRITICAL**: Turning this ON disables SELinux AVC denial spoofing. Leaving it **OFF** allows KernelSU to intercept and mask audit log context leaks (`avc: denied`), preventing detection by apps inspecting `dmesg`/`logcat`. |
-| **SELinux Permissive** | Settings &rarr; General *(Dev)* | **DISABLED (OFF)** | **CRITICAL**: Keeps SELinux in **Enforcing** mode. Permissive mode immediately trips Google Play Integrity (`MEETS_DEVICE_INTEGRITY`) and flags the device in all banking and enterprise applications. |
-| **Check updates** | Settings &rarr; Updates | **DISABLED (OFF)** | Prevents the manager from prompting or auto-downloading incompatible newer manager releases (v3.3.0+), which enforce UAPI 2 and generate red warning cards on Linux 4.19. |
-| **Developer options** | Settings &rarr; Developer | **ENABLED (ON)** | Enables visibility of low-level kernel toggles (*Disable kernel umount*, *Disable avc spoofing*, *SELinux Permissive*) to inspect and verify their states. |
-| **WebView debugging** | Settings &rarr; Developer | **DISABLED (OFF)** | Minimizes attack surface. Only enable temporarily when developing or debugging WebUI components within custom KernelSU modules. |
-
-> **Note on Developer Settings:** In KernelSU Next Manager, advanced toggles (*Disable kernel umount*, *Disable avc spoofing*, and *SELinux Permissive*) only appear in the main settings screen after unlocking developer mode (tapping **Manager version** 7 times under Settings).
+For the complete configuration guide, Linux 4.19 non-GKI compatibility ceiling analysis, and recommended stealth settings, see the dedicated [KernelSU Next & SuSFS Guide](KERNELSU.md).
 
 ---
 
