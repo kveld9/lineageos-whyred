@@ -100,6 +100,45 @@ Never run any of the following commands without explicit user authorization:
 
 ---
 
+## 8.1 Remote Branch Hygiene
+
+Personal fork repositories (`kveld9/*`) must keep only branches that represent an active development line or intentionally preserved work.
+
+Obsolete or abandoned remote branches may be removed only after a verification pass confirms that they contain no pending or uniquely preserved work.
+
+Before deleting any remote branch:
+
+1. Fetch and prune remote references.
+2. Verify the current branch topology and tracking relationships.
+3. Compare the candidate branch against its corresponding active maintenance branch.
+4. Identify commits present only on the candidate branch.
+5. Confirm that no unique commit contains pending fixes, experiments, recovery points, or other work that must be preserved.
+6. Confirm that relevant work is already merged, cherry-picked, superseded, tagged, or otherwise safely preserved.
+7. Obtain explicit user authorization before performing the destructive deletion.
+8. Delete only the specifically approved obsolete branch.
+9. Verify that the remote branch was actually removed and that no unintended refs were affected.
+
+Branches must **not** be deleted merely because they are old, inactive, or no longer checked out locally. Age or inactivity alone is insufficient justification.
+
+The active maintenance branch for each repository must always be preserved unless the user explicitly authorizes a maintenance-branch migration.
+
+Never perform bulk remote branch deletion without first generating and reviewing a branch/commit inventory.
+
+Branch cleanup must not modify, reset, rewrite, or otherwise alter commit history. Deleting a remote branch is a reference cleanup operation and must not be used as a substitute for normal commit, merge, tag, or archival procedures.
+
+When branch cleanup is performed, document:
+
+* branches inspected;
+* branches retained and the reason for retention;
+* branches approved for deletion;
+* branches actually deleted;
+* unique commits found on deleted branches;
+* any branches requiring manual review.
+
+If a branch contains work whose preservation status cannot be established with confidence, **do not delete it**. Report it for manual review instead.
+
+---
+
 ## 9. Repository Topology & Remote Mapping
 - **Root Repository** (`.`):
   - Remote: `git@github.com:kveld9/lineageos-whyred.git` (`main`)
