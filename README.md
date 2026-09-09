@@ -48,6 +48,16 @@ This repository orchestrates the build environment, local manifests, documentati
 - **Encryption:** File-Based Encryption (FBE / ICE, `fileencryption=ice`)
 - **Signing & Keys:** Signed with private RSA release keys generated locally in `certs/` (git-ignored and never committed). Third-party builds automatically generate their own isolated keys. Eliminates `test-keys` / public-key warnings in Trust and passes Play Integrity CTS profile.
 
+### Documentation & Guides
+
+| Guide | Scope |
+| :--- | :--- |
+| [Installation & Flashing Guide](INSTALL.md) | Clean flash walkthrough, recovery setup, and F2FS filesystem configuration |
+| [KernelSU Next & SuSFS Setup](KERNELSU.md) | Root installation, Linux 4.19 compatibility ceiling, and recommended stealth settings |
+| [System Debloating Guide](DEBLOAT.md) | Automated debloat script usage, 102-package registry, and critical apps baseline |
+| [Building from Source Guide](BUILD.md) | Host dependencies, repo synchronization, ccache tuning, and build automation |
+| [Hardware Audit Registry](AUDIT_REGISTRY.md) | Empirical hardware diagnostics, telemetry logs, benchmarks, and regression gates |
+
 ---
 
 ## Installation & Flashing
@@ -109,61 +119,23 @@ Flashable builds and recovery images are available under [GitHub Releases](https
 
 ## Building from Source
 
-### Prerequisites
-- Linux host (Arch Linux / Debian / Ubuntu) with 32 GB RAM (or 16 GB + swapfile).
-- Android build dependencies, `repo` tool, `git-lfs`, and `ccache`.
+This repository provides fully automated pipelines to synchronize upstream LineageOS sources, apply whyred device trees, and build signed release ROM packages and boot images:
 
-### Syncing Sources
 ```bash
-# Clone the orchestration repository
-git clone https://github.com/kveld9/lineageos-whyred.git
-cd lineageos-whyred
+# 1. Compile full LineageOS 21.0 ROM package
+./build_whyred.sh --build
 
-# Initialize LineageOS 21 repo
-repo init -u https://github.com/LineageOS/android.git -b lineage-21.0 --git-lfs
+# 2. Compile dedicated KernelSU Next + SuSFS boot image
+./build_whyred.sh --build-ksu
 
-# Add local manifest
-mkdir -p .repo/local_manifests
-cp local_manifests/whyred.xml .repo/local_manifests/whyred.xml
+# 3. Publish release assets to GitHub
+./publish_release.sh
 
-# Sync repos
-repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune -j$(nproc)
+# 4. Full end-to-end pipeline (Build ROM -> Build KSU -> Checksums -> GitHub Release)
+./build_whyred.sh --all
 ```
 
-### Compiling & Automated Pipelines
-
-Prepare the environment:
-```bash
-./build_whyred.sh
-```
-
-Available build and automation workflows:
-- **Compile ROM only**:
-  ```bash
-  ./build_whyred.sh --build
-  # Or manually: mka bacon
-  ```
-- **Build KernelSU Next + SuSFS Boot Image**:
-  ```bash
-  ./build_ksu_boot.sh
-  # Or: ./build_whyred.sh --build-ksu
-  ```
-- **Publish Release to GitHub**:
-  ```bash
-  ./publish_release.sh
-  # Or dry-run: ./publish_release.sh --dry-run
-  ```
-- **Full End-to-End Pipeline** (Build ROM -> Build KSU Boot -> Generate Checksums & Changelog -> Publish to GitHub):
-  ```bash
-  ./build_whyred.sh --all
-  ```
-
-Built artifacts generated in `out/target/product/whyred/`:
-- `lineage-21.0-*-UNOFFICIAL-whyred.zip` (Flashable ROM zip signed with private `release-keys`)
-- `boot.img` (Stock Clean Kernel 4.19 + Ramdisk)
-- `boot-ksu.img` (KernelSU Next v3.1.0-legacy-susfs + SuSFS v2.0.0 Kernel + Ramdisk)
-- `recovery.img` (LineageOS 21 Recovery)
-- `sha256sums.txt` (Cryptographic SHA-256 digests for all assets)
+For host package dependencies, repo synchronization commands, ccache tuning, and artifact specifications, see the dedicated [Building from Source Guide](BUILD.md).
 
 ---
 

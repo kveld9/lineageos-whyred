@@ -79,4 +79,5 @@ Once the operating system is booted and the initial setup wizard is completed:
 * [Main Project Documentation](README.md)
 * [KernelSU Next & SuSFS Setup Guide](KERNELSU.md)
 * [System Debloating Guide](DEBLOAT.md)
+* [Building from Source Guide](BUILD.md)
 * [Kernel & Hardware Audit Registry](AUDIT_REGISTRY.md)

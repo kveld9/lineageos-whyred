@@ -192,5 +192,7 @@ The following core applications must remain installed unless explicit replacemen
 ## Related Documentation
 
 * [Main Project Documentation](README.md)
+* [Installation and Flashing Guide](INSTALL.md)
+* [KernelSU Next & SuSFS Setup Guide](KERNELSU.md)
+* [Building from Source Guide](BUILD.md)
 * [Kernel & Hardware Audit Registry](AUDIT_REGISTRY.md)
-* [Engineering Protocol & Operational Standards](AGENTS.md)
