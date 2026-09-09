@@ -219,3 +219,9 @@ If a branch contains work whose preservation status cannot be established with c
   - **Applied Solution**: Source code modifications, configuration changes, or operational remediations.
   - **Traceability & Commits**: Exact commit hashes, affected repositories, and kernel branch synchronization.
   - **Final Verdict**: Plain-text status indicator (`[PASS]`, `[FAIL]`, `[FIXED]`, `[NOMINAL]`).
+
+---
+
+## 14. Strict English Language Policy
+- **Strict English Across All Repository Artifacts**: All documentation, technical notes, hardware diagnostic reports, `AUDIT_REGISTRY.md` entries, source code comments, script outputs, commit messages, and pull request metadata across this repository and all sub-trees must be written strictly and exclusively in English.
+- **Independence from Conversation Language**: Regardless of the language used in conversational interactions with the user (e.g., Spanish), no non-English content may ever be committed, recorded, or introduced into `AUDIT_REGISTRY.md`, `README.md`, `AGENTS.md`, or any git-tracked artifact.
