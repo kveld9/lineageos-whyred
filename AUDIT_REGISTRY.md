@@ -26,6 +26,9 @@ In accordance with `AGENTS.md` Section 13, this registry must be continuously ma
 | **Gate RIL** | Telephony, SIM, Mobile Data, Calls, IMS, VoLTE | `[PASS]` | None | SIM detection, LTE data (HTTP 200 OK), *611 call, SMS, IMS IPv6 validated | 0 changes |
 | **Gate BT/GNSS** | Bluetooth WCN3990 (UART/BLE), GNSS Engine/NMEA | `[PASS]` / `[NOT TESTED]` | Physical GNSS fix not tested (indoor workstation) | BT: PASS (BLE discovery over air, 3x cycles, A2DP proxy, suspend); GNSS: Engine/NMEA PASS, Sky Fix NOT TESTED | 0 changes |
 | **Gate CROSS/REG** | Cross-Subsystem Concurrency, Stress & Global Regression | `[PASS]` | None | WLAN+BT coex, Camera+Audio+Sensors concurrency, 4-radio deep sleep, Fingerprint HAL, 0 SSR/panics | 0 changes |
+| **Fase P4 Baseline**| Stock Kernel Physical Benchmark Suite (M01-M10) | `[PASS]` | None (nominal baseline) | 10 dimensions executed, raw series recorded and JSON archived | `54f411d70954` (`kernel`) |
+| **Fase P3.2.5** | Official San-Kernel Revenant R1.1.108 Boot Gate | `[FAIL]` | Official binary release hangs at splash ("Redmi") | Falsified rebuild hypothesis; confirmed official release non-bootable on device; rollback to stock verified | 0 changes |
+
 
 ---
 
@@ -290,3 +293,52 @@ In accordance with `AGENTS.md` Section 13, this registry must be continuously ma
   - Biometric Service: `Fingerprint21` service responsive and operational; HAL deaths since boot: 0.
   - System Integrity: Uptime 30+ min, CPU idle > 740%, thermal zones nominal (29-37 C), zero kernel panics, zero softlockups, zero SSR restarts, and zero unhandled process crashes across the executed matrix.
 * **Verdict**: `[PASS]`. Global cross-subsystem regression test completed with nominal results across the evaluated matrix (0 code changes, 0 commits).
+
+---
+
+### 17. Stock Baseline Physical Comparative Benchmark Suite (Fase P4 Baseline)
+* **Scope**: Comprehensive physical hardware benchmark across 10 evaluation dimensions (M01 to M10) on canonical stock kernel (`lineage-21`, commit `54f411d709549ab3746b9cf14e70852beeb3ba17`).
+* **Test Procedures & Conditions**:
+  - Device: Redmi Note 5 (`whyred` / `df286add`), battery 99% (4391 mV), initial SoC temp 25.0 C, SELinux Enforcing, KSU/SUSFS absent.
+  - Raw time series and structured outputs archived in scratch:
+    - Raw log: `scratch/benchmark_results/baseline_stock_raw.log` (113 KB).
+    - Summary JSON: `scratch/benchmark_results/baseline_stock_summary.json` (12.8 KB).
+  - Executed dimensions:
+    - **M01**: CPU Single-Core (199.81 Mops/s), Multi-Core 8-thread (1075.03 Mops/s), Sustained 60s load (5.4% thermal degradation, 35.8 C -> 58.0 C).
+    - **M02**: Scheduler & Context Switch Latency via `perf bench sched pipe` (16.99 us/op, 58,843 ops/s).
+    - **M03**: IPC Throughput via 64KB unbuffered UNIX socket transfer (1780.20 MB/s).
+    - **M04**: Cache & Memory Hierarchy bandwidth (L1 4.54 GB/s, L2 3.01 GB/s, L3 2.11 GB/s, DRAM 0.99 GB/s). Pointer chase characterized as non-conclusive for DRAM latency.
+    - **M05**: Flash Storage I/O on `userdata` ext4 (Buffered write 191.07 MB/s, Sync write 76.16 MB/s, Direct read 1118.52 MB/s).
+    - **M06**: Kernel Network Stack loopback TCP throughput (5.09 Gbps, 0 TCP retransmissions across 10s).
+    - **M07**: Graphics & Display Composition (SurfaceFlinger 60.00 FPS nominal, 0 dropped frames).
+    - **M08 / M10**: Power Consumption & Efficiency (Resting 4391 mV -> 4364 mV, mean loaded 4.141 V, Efficiency Index: 18,622,026 Mops/V).
+    - **M09**: Deep Sleep Wakefulness state (`mWakefulness=Asleep`, `mHoldingWakeLockSuspendBlocker=false`).
+* **Verdict**: `[PASS]`. Baseline reference dataset fully established, characterized, and locked.
+
+---
+
+### 18. Official Release San-Kernel Revenant R1.1.108 Physical Boot Gate (Fase P3.2.5)
+* **Scope**: Physical bootability validation of the official, pristine `Image.xz` + `kernel.dtb` binary release from `San-Kernel-Revenant-R1.1.108-Whyred.zip` packaged with baseline stock ramdisk and canonical header v0.
+* **Pre-Flash Audit**:
+  - Official `Image.xz`: SHA256 `0eae553cb486774563cf1d9b9b483838ec4ff0e8acc5d8e48522e4bbfd1d700d` (11,514,300 bytes).
+  - Official uncompressed `Image`: SHA256 `817bebc6898dd98d341ba084ce889e100babb8699238e2153043e1727c644e4f` (40,351,768 bytes).
+  - Official `kernel.dtb`: SHA256 `f8cd4e2560a4a8a30d9c7aea2093ef753c5d4703e902a4ea65266e98e15dbe99` (342,362 bytes).
+  - Baseline `ramdisk.img`: SHA256 `685f11d004aba791bbdd0d9d4c0129df8dbcc4ed87fef41a2a4dfb57f69545e8` (1,399,200 bytes).
+  - Packaged test boot: `boot-revenant-r1.1.108-official-test.img` (SHA256 `8cee40403d8b4179830eb011ad187f98599ac85c296ee3cd338dc7c6c7e41812`, 18,554,880 bytes).
+  - Audit: Unpacked test image verified byte-for-byte identical to official kernel and DTB. No ACS patch, no KSU, no SUSFS.
+* **Physical Hardware Execution**:
+  - Image flashed to `/dev/block/bootdevice/by-name/boot` in OrangeFox recovery; readback SHA256 verified identical.
+  - Reboot executed.
+* **Observed Behavior**:
+  - Device froze immediately at OEM splash screen ("Redmi").
+  - 60+ seconds elapsed without USB enumeration, ADB response, or kernel execution transition.
+  - Behavior matched previous candidate tests (P3.2.2 and board-id experiment).
+* **Rollback Protocol**:
+  - Device rebooted to OrangeFox recovery.
+  - `boot-stock.img` (SHA256 `82a102198fd9b2bbfb856fc3057afb9e30e454fee76d392bf50afcc92d6dc220`) written to `/dev/block/bootdevice/by-name/boot` and readback verified.
+  - Device rebooted and returned to `sys.boot_completed=1` under stock kernel `4.19.325-cip132-st16-perf-g54f411d70954`.
+* **Causal Diagnosis & Defconfig Discovery (P3.2.4)**:
+  - Falsified the assumption that `extract-ikconfig` output represented the compilation recipe: `kernel/Makefile` lines 131-133 contain a static hardcoded rule committed in 2020 (`1b3cc5c195c6`) that injects `sdm660-perf-full_defconfig` into `config_data.gz` as a userspace spoof.
+  - Confirmed that the official upstream release binary `San-Kernel-Revenant-R1.1.108` itself fails to boot on this hardware platform.
+* **Verdict**: `[FAIL]` (`OFFICIAL RELEASE NON-BOOTABLE ON THIS WHYRED`). Rollback to stock: `[PASS]`.
+
