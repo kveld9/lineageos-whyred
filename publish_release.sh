@@ -120,6 +120,10 @@ if [ "${KERNEL_ONLY}" = true ]; then
             [ -f "${BOOT_IMG}" ] && RELEASE_ASSETS+=("${BOOT_IMG}")
             [ -f "${BOOT_KSU_IMG}" ] && RELEASE_ASSETS+=("${BOOT_KSU_IMG}")
             [ -f "${BOOT_RESUKISU_IMG}" ] && RELEASE_ASSETS+=("${BOOT_RESUKISU_IMG}")
+            if [ ${#RELEASE_ASSETS[@]} -eq 0 ]; then
+                echo "ERROR: No boot image assets (boot.img, boot-ksu.img, boot-resukisu.img) found in ${OUT_DIR}."
+                exit 1
+            fi
             ;;
         *)
             echo "ERROR: Unknown kernel variant '${KERNEL_VARIANT}'. Use: stock, ksu, resukisu, or all."
@@ -219,7 +223,41 @@ fi
 
 # 5. Format Release Notes
 NOTES_FILE="${OUT_DIR}/release_notes_${TAG}.md"
-cat <<EOF > "${NOTES_FILE}"
+
+if [ "${KERNEL_ONLY}" = true ]; then
+    RELEASE_TITLE="Linux Kernel 4.19 (${KERNEL_VARIANT}) for whyred"
+    cat <<EOF > "${NOTES_FILE}"
+# Linux Kernel 4.19 (${KERNEL_VARIANT}) for Xiaomi Redmi Note 5 Pro (whyred)
+
+Dedicated kernel release for **whyred** powered by **Linux Kernel 4.19.325** (ThinLTO Clang optimized).
+
+- **Kernel Variant**: ${KERNEL_VARIANT}
+- **Linux Base**: 4.19.325
+- **Compiler**: Clang (ThinLTO + Polly optimizations)
+- **Target Device**: Xiaomi Redmi Note 5 / Note 5 Pro (\`whyred\`)
+
+## What's Changed in this Release
+
+${CHANGELOG_BODY}
+
+## Assets & SHA-256 Checksums
+
+\`\`\`text
+$(cat "${CHECKSUMS_FILE}")
+\`\`\`
+
+## Installation Instructions
+
+1. **Flash Kernel via Fastboot**:
+   \`\`\`bash
+   fastboot flash boot $(basename "${RELEASE_ASSETS[0]}")
+   fastboot reboot
+   \`\`\`
+
+EOF
+else
+    RELEASE_TITLE="LineageOS 21.0 (Android 14) for whyred"
+    cat <<EOF > "${NOTES_FILE}"
 # LineageOS 21.0 (Android 14) for Xiaomi Redmi Note 5 Pro (whyred)
 
 Unofficial production release of **LineageOS 21.0** (Android 14) powered by **Linux Kernel 4.19** (4.19.325) for \`whyred\`.
@@ -284,6 +322,7 @@ If you require advanced stealth, metamodules, and multi-manager support:
    - Release: https://github.com/ReSukiSU/ReSukiSU/releases
 
 EOF
+fi
 
 echo "Generated release notes in ${NOTES_FILE}."
 
@@ -295,7 +334,7 @@ if [ "${DRY_RUN}" = true ]; then
     cat "${NOTES_FILE}"
     echo "----------------------------------------------------------"
     echo "[DRY RUN] Would execute:"
-    echo "gh release create \"${TAG}\" --title \"LineageOS 21.0 (Android 14) for whyred\" --notes-file \"${NOTES_FILE}\" ${RELEASE_ASSETS[*]}"
+    echo "gh release create \"${TAG}\" --title \"${RELEASE_TITLE}\" --notes-file \"${NOTES_FILE}\" ${RELEASE_ASSETS[*]}"
     exit 0
 fi
 
@@ -314,11 +353,11 @@ echo "Publishing release to GitHub..."
 # Check if release tag already exists
 if gh release view "${TAG}" &>/dev/null; then
     echo "Tag '${TAG}' already exists. Updating release notes and uploading assets..."
-    gh release edit "${TAG}" --title "LineageOS 21.0 (Android 14) for whyred" --notes-file "${NOTES_FILE}"
+    gh release edit "${TAG}" --title "${RELEASE_TITLE}" --notes-file "${NOTES_FILE}"
     gh release upload "${TAG}" "${RELEASE_ASSETS[@]}" --clobber
 else
     gh release create "${TAG}" \
-        --title "LineageOS 21.0 (Android 14) for whyred" \
+        --title "${RELEASE_TITLE}" \
         --notes-file "${NOTES_FILE}" \
         "${RELEASE_ASSETS[@]}"
 fi
