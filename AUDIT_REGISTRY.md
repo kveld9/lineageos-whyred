@@ -28,7 +28,7 @@ In accordance with `AGENTS.md` Section 13, this registry must be continuously ma
 | **Gate CROSS/REG** | Cross-Subsystem Concurrency, Stress & Global Regression | `[PASS]` | None | WLAN+BT coex, Camera+Audio+Sensors concurrency, 4-radio deep sleep, Fingerprint HAL, 0 SSR/panics | 0 changes |
 | **Fase P4 Baseline**| Stock Kernel Physical Benchmark Suite (M01-M10) | `[PASS]` | None (nominal baseline) | 10 dimensions executed, raw series recorded and JSON archived | `54f411d70954` (`kernel`) |
 | **Fase P3.2.5** | Official San-Kernel Revenant R1.1.108 Boot Gate | `[FAIL]` | Official binary release hangs at splash ("Redmi") | Falsified rebuild hypothesis; confirmed official release non-bootable on device; rollback to stock verified | 0 changes |
-| **Phase P5 Live Tunables**| Live Kernel Runtime Optimization Matrix (I/O, Sched, VM, zRAM, HWUI) | `[APPLIED]` | CFS 4ms cuts cross-cluster switch latency by 85% (105us -> 15.7us); dirty 10/5 improves eMMC write +4.3%; mq-deadline reduces latency drops; F2FS iostat, server errata, and PLT trampolines removed | Applied runtime tunables in device init and static defconfig optimizations across both kernel branches | `29a107a` (`sdm660-common`), `27bc893` / `6308990` (`kernel`) |
+| **Phase P5 Live Tunables**| Live Kernel Runtime Optimization Matrix (I/O, Sched, VM, zRAM, HWUI) | `[APPLIED]` | CFS 4ms cuts cross-cluster switch latency by 85% (105us -> 15.7us); dirty 10/5 improves eMMC write +4.3%; mq-deadline reduces latency drops; F2FS iostat, server errata, and PLT trampolines removed | Applied runtime tunables in device init and static defconfig optimizations across both kernel branches | `fd083a4` (`sdm660-common`), `27bc893` / `6308990` (`kernel`) |
 
 
 ---
@@ -500,7 +500,7 @@ In accordance with `AGENTS.md` Section 13, this registry must be continuously ma
 
 #### A. Device Tree Configuration Tunings (`device/xiaomi/sdm660-common`)
 *Target file*: `rootdir/etc/init.qcom.power.rc`
-*Commit*: `29a107a9479866a773a0e162c6f953953e994af7` (`lineage-21`)
+*Commits*: `29a107a9479866a773a0e162c6f953953e994af7`, `fd083a43fa4cf9ba7b4d1b849e7561f5c66b1a13` (`lineage-21`)
 
 1. **CFS Scheduler Preemption Granularity**:
    * *Action*: Set `kernel.sched_latency_ns = 4000000`, `kernel.sched_min_granularity_ns = 1000000`, `kernel.sched_wakeup_granularity_ns = 1000000`.
