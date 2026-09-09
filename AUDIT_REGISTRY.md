@@ -723,3 +723,26 @@ In accordance with `AGENTS.md` Section 13, this registry must be continuously ma
     - Root execution verified: `su -c id` -> `uid=0(root) gid=0(root) groups=0(root) context=u:r:ksu:s0`.
 * **Commits**: `cb3c0da55a1fa`, `615c3fe584a0a`, `5242cb65869e0`, `eaf19fefb5b4e` (`kernel/xiaomi/sdm660`).
 * **Verdict**: `[PASS]`. Full cross-variant parity achieved; ReSukiSU v4.2.0 + SuSFS v2.3.0 boot image compiled, flashed, and physically validated on hardware with zero defects.
+
+---
+
+### 25. USB MTP FunctionFS Initialization & Micro-USB Port Role Characterization (Gate USB-MTP)
+* **Scope**: Physical hardware USB peripheral negotiation, ConfigFS gadget composition, and MTP file transfer validation on Xiaomi Redmi Note 5 (`whyred` / `df286add`) running LineageOS 21.0 (Android 14).
+* **Observed Behavior & Telemetry**:
+  - Device USB preference options in Settings (`UsbDetailsActivity`) were disabled/grayed out; host PC initially failed to detect MTP storage volumes.
+  - `dumpsys usb` reported `connected=true`, `configured=true`, `host_connected=false`, `usb_hal_version=-2`.
+  - `UsbDeviceManager` logged `Failed to open control for mtp` during initial boot due to missing `/dev/usb-ffs/mtp/ep0`.
+  - ConfigFS gadget inspection (`/config/usb_gadget/g1/configs/b.1/`) showed only `f1 -> ffs.adb` linked, omitting MTP endpoints.
+* **Defect Classification & Root Cause**:
+  1. **AOSP Port Manager Micro-USB UI Limitation**: Android 14 `UsbDetailsFunctionsController` explicitly enforces `if (!connected || dataRole != DATA_ROLE_DEVICE) { mProfilesContainer.setEnabled(false); }`. On legacy Micro-USB hardware (`whyred`), no USB Type-C Port Controller HAL exists (`usb_hal_version = -2`), causing `UsbBackend.getDataRole()` to evaluate `mPortStatus == null ? DATA_ROLE_NONE : ...`. Returning `DATA_ROLE_NONE` (0) triggers AOSP to disable the radio selector container in `UsbDetailsFragment`. In contrast, `UsbDefaultFragment` (Developer Options -> Default USB configuration) is unconstrained and allows setting the unlocked default function.
+  2. **Vendor Init FunctionFS Gating**: In `/vendor/etc/init/hw/init.qcom.usb.rc`, mounting the MTP FunctionFS endpoint (`mount functionfs mtp /dev/usb-ffs/mtp`) and symlinking `functions/ffs.mtp` into ConfigFS configuration `b.1` is strictly conditioned on `property:vendor.usb.use_ffs_mtp=1`. This property was absent from `device/xiaomi/sdm660-common/vendor.prop`.
+* **Applied Solution**:
+  - Added `vendor.usb.use_ffs_mtp=1` to `device/xiaomi/sdm660-common/vendor.prop` to ensure Qualcomm init mounts FunctionFS MTP and binds `ffs.mtp` on system boot.
+  - Initialized FunctionFS MTP and triggered ConfigFS reconfiguration via Android USB manager (`svc usb setFunctions mtp true`), populating `f1 -> ffs.mtp` (Still Image / MTP, class `06:01:01`) and `f2 -> ffs.adb`.
+  - Enforced persistent default via `settings put secure usb_screen_unlocked_functions mtp,adb` and `persist.sys.usb.config=mtp,adb`.
+* **Physical Hardware Validation**:
+  - Host PC (Linux / KDE Dolphin) detected USB ID `18d1:4ee2` (Google MTP + ADB) with interface `06:01:01` active on bus `1-9`.
+  - KIO worker `kio-mtp` enumerated the phone volume at `mtp:/Redmi Note 5/Almacenamiento interno compartido`.
+  - File transfer verified end-to-end: wrote `/tmp/mtp_test.txt` to `.../Download/mtp_test.txt`, read storage directory, and safely deleted test artifact over MTP.
+* **Verdict**: `[PASS]` / `[FIXED]`. USB MTP file transfer fully operational and persistent across reconnects.
+
