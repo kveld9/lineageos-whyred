@@ -39,14 +39,47 @@ This repository orchestrates the build environment, local manifests, documentati
 | **Common Vendor Tree** | `vendor/xiaomi/sdm660-common` | TheMuppets 21 | Upstream (`lineage-21`) |
 | **Build System** | `build/make` | LineageOS 21 | [`kveld9/android_build`](https://github.com/kveld9/android_build) (`lineage-21.0`) |
 
-### Key Technical Details
-- **Android Version:** 14 (LineageOS 21.0, `user` / `release-keys`)
-- **Kernel Version:** Linux 4.19.325 (`Image.gz-dtb`)
-- **Platform Security Patch:** August 2026 (`2026-08-01`)
-- **Vendor Patch Level:** November 2018 (`2018-11-01`, Qualcomm/Xiaomi proprietary blobs)
-- **Partition Layout:** Standard static partitions (non-dynamic, original eMMC partition table)
-- **Encryption:** File-Based Encryption (FBE / ICE, `fileencryption=ice`)
-- **Signing & Keys:** Signed with private RSA release keys generated locally in `certs/` (git-ignored and never committed). Third-party builds automatically generate their own isolated keys. Eliminates `test-keys` / public-key warnings in Trust and passes Play Integrity CTS profile.
+### Repository Structure
+
+```text
+lineageos-whyred/
+├── local_manifests/
+│   └── whyred.xml             # Local manifest mapping personal forks into AOSP tree
+├── build_whyred.sh            # Unified ROM and KernelSU build automation script
+├── build_ksu_boot.sh          # Dedicated KernelSU Next boot image build script
+├── debloat_whyred.sh          # Modular ADB debloater (102 safe packages for user 0)
+├── publish_release.sh         # GitHub Release asset publisher & checksum generator
+├── README.md                  # Central repository documentation and navigation
+├── INSTALL.md                 # Step-by-step flashing & F2FS storage setup guide
+├── KERNELSU.md                # KernelSU Next & SuSFS stealth configuration guide
+├── DEBLOAT.md                 # Comprehensive 102-package debloat registry & rationale
+├── BUILD.md                   # Source synchronization & build environment guide
+├── AUDIT_REGISTRY.md          # Hardware diagnostics & kernel audit telemetry
+└── AGENTS.md                  # Autonomous engineering & repository protocol
+```
+
+### Technical Platform Stack
+
+* **Operating System & Userspace (AOSP / LineageOS):**
+  * **Android Version:** 14 (LineageOS 21.0, production `user` build signed with private release keys).
+  * **Security Patch Level:** August 2026 (`2026-08-01` platform patch / November 2018 vendor patch).
+  * **Display & Compositor:** SurfaceFlinger Gaussian blur disabled (`supports_background_blur=0`), offloading translucent UI scrims to Qualcomm MDP5 Hardware Composer (HWC) for stable 60 fps rendering.
+  * **Zero-Bloat Baseline:** Pure AOSP framework free from vendor MIUI/HyperOS analytics and background telemetry daemons.
+
+* **Kernel & Core Subsystems (Linux 4.19):**
+  * **Kernel Architecture:** Linux Kernel 4.19 LTS (`4.19.325`, `Image.gz-dtb`) backport for Qualcomm Snapdragon 660 (SDM660).
+  * **CPU & GPU Scheduling:** Energy Aware Scheduling (EAS) calibrated for 4x Gold + 4x Silver Kryo 260 cores and Adreno 509 GPU.
+  * **Networking (TCP):** Sockets preserve congestion window across idle intervals (`tcp_slow_start_after_idle=0`, RFC 2861) to eliminate latency stalls during interactive mobile browsing.
+
+* **Security, Encryption & Storage:**
+  * **SELinux Enforcement:** Strict **Enforcing** mode with comprehensive sepolicy compliance; zero permissive shortcuts.
+  * **Storage Encryption:** File-Based Encryption (FBE) accelerated by Qualcomm Inline Cryptographic Engine (ICE).
+  * **Filesystem:** Flash-Friendly File System (**F2FS**) recommended on `/data` to mitigate eMMC 5.1 random write latency.
+  * **Cryptographic Keys:** Signed with private RSA 2048-bit release keys passing Play Integrity (`MEETS_DEVICE_INTEGRITY`).
+
+* **Root & Stealth Subsystem (Optional Variant):**
+  * **KernelSU Next v3.1.0:** Kernel-level privilege management via anonymous file descriptor supercalls (`versionCode: 33024`).
+  * **SuSFS v2.0.0:** VFS-level mount isolation masking `/debug_ramdisk`, loop devices, and overlayfs from app and Zygote namespaces.
 
 ### Documentation & Guides
 
