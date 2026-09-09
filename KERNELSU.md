@@ -48,13 +48,13 @@ The status card should indicate:
 
 ## Non-GKI Architecture & Compatibility Ceiling (Linux 4.19)
 
-Whyred (Qualcomm Snapdragon 660 / SDM660) operates on **Linux Kernel 4.19**, which belongs to the legacy **non-GKI** (Generic Kernel Image) Android architecture:
+Whyred (Qualcomm Snapdragon 636 / sdm660 platform family) operates on **Linux Kernel 4.19**, which belongs to the legacy **non-GKI** (Generic Kernel Image) Android architecture:
 
 ### Non-GKI vs. GKI 2.0
 Starting in Android 12 (Linux 5.10 / 6.1+), Google enforces GKI with standardized KMI (Kernel Module Interface). Modern SuSFS (v2.1+) and recent root frameworks rely heavily on GKI runtime live-patching and modern eBPF/Kprobe facilities. In non-GKI 4.19 kernels, SuSFS must be statically integrated at compile-time using de-inlined manual hooks across core subsystems:
 * VFS path resolution and directory traversal (`fs/namei.c`, `fs/readdir.c`).
 * Namespace management and mount propagation (`fs/namespace.c`).
-* Reboot dispatcher for system supercalls (`kernel/reboot.c`).
+* Reboot dispatcher for kernel driver hooking (`kernel/reboot.c`).
 * Core SELinux policy hooks and audit masking.
 
 ### The Absolute Compatibility Ceiling
@@ -63,7 +63,7 @@ Starting in Android 12 (Linux 5.10 / 6.1+), Google enforces GKI with standardize
 * Therefore, the combination of **KernelSU Next v3.1.0-legacy-susfs** + **SuSFS v2.0.0** is the absolute highest achievable compatibility ceiling for Linux 4.19 non-GKI.
 
 ### Why Manager v3.1.0 (33024) is Required
-KernelSU Next v3 completely replaced the legacy `prctl(0xdeadbeef, ...)` communication channel from v0.x/v1.x with an anonymous-inode file descriptor supercall subsystem (`ksu_install_fd` dispatched via `sys_reboot`). The companion application matched to this interface is **KernelSU Next Manager v3.1.0** (`versionCode: 33024`). Newer managers (such as v3.3.0+) enforce UAPI version 2 (driver version >= 33188) and display permanent UAPI mismatch warning cards when paired with the legacy 33024 driver.
+KernelSU Next v3 completely replaced the legacy `prctl(0xdeadbeef, ...)` communication channel from v0.x/v1.x with a dedicated driver ioctl interface (`versionCode: 33024`). The companion application matched to this interface is **KernelSU Next Manager v3.1.0** (`versionCode: 33024`). Newer managers (such as v3.3.0+) enforce UAPI version 2 (driver version >= 33188) and display permanent UAPI mismatch warning cards when paired with the legacy 33024 driver.
 
 ---
 

@@ -9,7 +9,7 @@ Unofficial Android 14 (LineageOS 21.0) port powered by Linux Kernel 4.19 (`4.19.
 LineageOS was deliberately chosen as the long-term system foundation for `whyred` based on core architectural principles:
 
 - **Architectural Purity & Minimalist Baseline:**
-  Unlike vendor stock firmware (MIUI/HyperOS) burdened with intrusive telemetry daemons, analytics tracking, and aggressive background process killing, LineageOS adheres strictly to clean AOSP design. It avoids arbitrary cosmetic hacks and feature bloat that cause memory leaks and degrade responsiveness on mid-range hardware (Snapdragon 660 with eMMC 5.1).
+  Unlike vendor stock firmware (MIUI/HyperOS) burdened with intrusive telemetry daemons, analytics tracking, and aggressive background process killing, LineageOS adheres strictly to clean AOSP design. It avoids arbitrary cosmetic hacks and feature bloat that cause memory leaks and degrade responsiveness on mid-range hardware (Snapdragon 636 with eMMC 5.1).
 
 - **Hardware Longevity & Combating Planned Obsolescence:**
   Official OEM support for `whyred` ceased on Android 9 (Pie) running an obsolete Linux 4.4 kernel. LineageOS 21.0 paired with this modernized Linux 4.19 kernel backport elevates this 2018 device to Android 14 with contemporary platform security patches, extending its secure, daily operational lifecycle by nearly a decade.
@@ -67,7 +67,7 @@ lineageos-whyred/
   * **Zero-Bloat Baseline:** Pure AOSP framework free from vendor MIUI/HyperOS analytics and background telemetry daemons.
 
 * **Kernel & Core Subsystems (Linux 4.19):**
-  * **Kernel Architecture:** Linux Kernel 4.19 LTS (`4.19.325`, `Image.gz-dtb`) backport for Qualcomm Snapdragon 660 (SDM660).
+  * **Kernel Architecture:** Linux Kernel 4.19 LTS (`4.19.325`, `Image.gz-dtb`) backport for Qualcomm Snapdragon 636 (SDM636, sdm660 platform family).
   * **CPU & GPU Scheduling:** Energy Aware Scheduling (EAS) calibrated for 4x Gold + 4x Silver Kryo 260 cores and Adreno 509 GPU.
   * **Networking (TCP):** Sockets preserve congestion window across idle intervals (`tcp_slow_start_after_idle=0`, RFC 2861) to eliminate latency stalls during interactive mobile browsing.
 
@@ -78,7 +78,7 @@ lineageos-whyred/
   * **Cryptographic Keys:** Signed with private RSA 2048-bit release keys passing Play Integrity (`MEETS_DEVICE_INTEGRITY`).
 
 * **Root & Stealth Subsystem (Optional Variant):**
-  * **KernelSU Next v3.1.0:** Kernel-level privilege management via anonymous file descriptor supercalls (`versionCode: 33024`).
+  * **KernelSU Next v3.1.0:** Kernel-level privilege management via dedicated driver ioctl interface (`versionCode: 33024`).
   * **SuSFS v2.0.0:** VFS-level mount isolation masking `/debug_ramdisk`, loop devices, and overlayfs from app and Zygote namespaces.
 
 ### Documentation & Guides
