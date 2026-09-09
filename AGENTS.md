@@ -60,6 +60,13 @@ Never run any of the following commands without explicit user authorization:
 - **Kernel Isolation**: Linux kernel 4.19 driver, subsystem, defconfig, and core architecture changes belong exclusively to `kernel/xiaomi/sdm660`.
 - **DTS Classification**: Device-specific Device Tree Source (DTS) modifications must be classified carefully before editing (kernel DTS in `kernel/xiaomi/sdm660/arch/arm64/boot/dts/` vs device tree configurations in `device/xiaomi/whyred`).
 - **No Duplicate Fixes**: Never duplicate a fix across kernel and device trees without concrete evidence that both require independent changes.
+- **Dual Kernel Maintenance & Parity Policy**:
+  - Two kernel branches are maintained in parallel in `kernel/xiaomi/sdm660`:
+    - `lineage-21`: Stock LineageOS 21 Linux 4.19 kernel.
+    - `lineage-21-ksu`: KernelSU-Next and SuSFS integration line.
+  - The only architectural distinction between both branches is the KernelSU-Next / SuSFS patchset and its configuration symbols.
+  - Subsystem, driver, power, display, connectivity, stability, and bug fixes are kernel-agnostic and apply equally to both kernels.
+  - Whenever a general kernel fix or improvement is applied to either branch, verify and synchronize/cherry-pick the change to the counterpart branch to preserve strict parity.
 
 ---
 
@@ -91,7 +98,7 @@ Never run any of the following commands without explicit user authorization:
   - Verify remote URL (`git remote -v`).
   - Verify tracking upstream branch.
   - Check latest commit (`git log -1 --oneline`).
-  - Push only to the verified tracking branch (`main` for root, `lineage-21` for trees).
+  - Push only to the verified tracking branch (`main` for root, `lineage-21` / `lineage-21-ksu` for trees).
 - **Missing Remote Protocol**:
   If a modified repository lacks the required personal remote (`kveld9/*`):
   - Stop before pushing.
@@ -150,8 +157,8 @@ If a branch contains work whose preservation status cannot be established with c
   - Remote: `git@github.com:kveld9/proprietary_vendor_xiaomi_whyred.git` (`lineage-21`)
   - Scope: Proprietary blobs, vendor configurations, and module inclusions.
 - **Kernel Tree** (`kernel/xiaomi/sdm660`):
-  - Remote: `git@github.com:kveld9/android_kernel_xiaomi_sdm660.git` (`lineage-21`)
-  - Scope: Linux kernel 4.19 source, defconfigs, drivers, and device tree source (DTS).
+  - Remote: `git@github.com:kveld9/android_kernel_xiaomi_sdm660.git` (`lineage-21` and `lineage-21-ksu`)
+  - Scope: Linux kernel 4.19 source, defconfigs, drivers, and device tree source (DTS). Parity maintained across both active branches (`lineage-21` stock and `lineage-21-ksu`).
 - **Common Device Tree** (`device/xiaomi/sdm660-common`):
   - Remote: `git@github.com:kveld9/android_device_xiaomi_sdm660-common.git` (`lineage-21`)
   - Scope: Shared SDM660 HAL definitions, init scripts, and power configs.
