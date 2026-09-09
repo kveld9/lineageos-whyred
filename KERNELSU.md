@@ -91,4 +91,5 @@ To maintain maximum stealth (bypassing root/mount detection), security, and bank
 * [Main Project Documentation](README.md)
 * [Installation and Flashing Guide](INSTALL.md)
 * [System Debloating Guide](DEBLOAT.md)
+* [Building from Source Guide](BUILD.md)
 * [Kernel & Hardware Audit Registry](AUDIT_REGISTRY.md)
