@@ -29,6 +29,7 @@ In accordance with `AGENTS.md` Section 13, this registry must be continuously ma
 | **Fase P4 Baseline**| Stock Kernel Physical Benchmark Suite (M01-M10) | `[PASS]` | None (nominal baseline) | 10 dimensions executed, raw series recorded and JSON archived | `54f411d70954` (`kernel`) |
 | **Fase P3.2.5** | Official San-Kernel Revenant R1.1.108 Boot Gate | `[FAIL]` | Official binary release hangs at splash ("Redmi") | Falsified rebuild hypothesis; confirmed official release non-bootable on device; rollback to stock verified | 0 changes |
 | **Phase P5 Live Tunables**| Live Kernel Runtime Optimization Matrix (I/O, Sched, VM, zRAM, HWUI) | `[APPLIED]` | CFS 4ms cuts cross-cluster switch latency by 85% (105us -> 15.7us); dirty 10/5 improves eMMC write +4.3%; mq-deadline reduces latency drops; F2FS iostat, server errata, and PLT trampolines removed | Applied runtime tunables in device init and static defconfig optimizations across both kernel branches | `fd083a4` (`sdm660-common`), `27bc893` / `6308990` (`kernel`) |
+| **Phase P6 KTweak Benchmark**| Comparative Evaluation of Community Magisk Profiles (KTweak Balance, Latency, Throughput) | `[NOMINAL]` | sched_child_runs_first=1 cuts app launch latency by -6.9% (-35.6ms); tcp_fastopen=3 cuts handshake latency by -51.2% (61.3ms -> 29.9ms); KTweak CFS granularity (500us/100us) degrades switch latency by 58-346% (falsified) | Characterized 3 evaluation suites directly on physical hardware; baseline restored | 0 changes |
 
 
 ---
@@ -576,4 +577,50 @@ In accordance with `AGENTS.md` Section 13, this registry must be continuously ma
 * **Vulkan HWUI Renderer (`skiavk`)**: DISCARDED. Degraded application launch latency by **+13.1% (+54 ms)** on Adreno 509 due to shader compilation overhead; OpenGL ES (`skiagl`) is strictly preserved.
 * **Forced DDR Performance Locking (`soc:qcom,cpu4-cpu-ddr-lat = performance`)**: DISCARDED. Caused a **-12.7% drop in DRAM write throughput** (3117 -> 2722 MB/s) due to bus arbitration contention; dynamic scaling is preserved.
 * **WALT Migration Threshold Reduction (`sched_upmigrate = 85 / 70`)**: DISCARDED. Migrates heavy tasks to BIG cluster prematurely, causing contention and reducing multi-core throughput by **-2.88%**; Qualcomm factory tuning (`96 / 90`) is preserved.
+
+---
+
+### 20. Physical Comparative Evaluation of Community Magisk Profiles: KTweak (Phase P6 KTweak Benchmark)
+* **Scope**: Controlled physical empirical comparison between candidate tunables sourced from community performance modules (KTweak `balance`, `latency`, `throughput`, `budget` by tytydraco) and the tuned LineageOS 21 baseline on Xiaomi Redmi Note 5 (`whyred` / `df286add`) under Linux `4.19.325-cip132-st16-perf`.
+* **Execution Environment & Protocol**:
+  - Target: Xiaomi Redmi Note 5 (`df286add`), battery ~95%, connected via USB ADB.
+  - Root Access: Temporary `su` execution targeting procfs/sysfs nodes without modifying vendor or system images.
+  - Benchmark Suites:
+    - **Suite A**: Process fork execution priority (`sched_child_runs_first` 0 vs 1) evaluating Settings cold-start launch latency via `am start -W -S com.android.settings/.Settings` (5 repetitions per state).
+    - **Suite B**: CFS scheduler preemption granularity comparing Whyred Tuned (`4ms / 1ms / 1ms`) against KTweak Balance (`4ms / 500us / 2ms`) and KTweak Latency (`1ms / 100us / 500us`), measuring cross-cluster switch latency Core 0 -> 4 via native `bench_suite sched 0 4` (3 reps) and multi-core 8-thread throughput via `bench_suite multi 8` (3 reps).
+    - **Suite C**: TCP network stack acceleration comparing Android default (`tcp_fastopen=1`, `tcp_ecn=2`, `tcp_syncookies=1`) against KTweak tuned (`tcp_fastopen=3`, `tcp_ecn=1`, `tcp_syncookies=0`), measuring HTTP connection handshake time and total transfer time via `curl` against `https://www.google.com` (5 reps).
+  - Raw Telemetry Archive: `scratch/ktweak_benchmark_results.json`.
+
+* **Test Matrix & Comparative Telemetry**:
+
+  #### 1. Suite A: Process Fork & Cold-Start Launch Latency (`sched_child_runs_first`)
+  - Objective: Test whether prioritizing the newly forked child process over the parent Zygote accelerates Android application initialization.
+  | Setting | Mean WaitTime (ms) | Raw WaitTimes (5 reps) | Delta vs Baseline | Observation |
+  | :--- | :---: | :---: | :---: | :--- |
+  | **`sched_child_runs_first = 0` [Stock Base]** | **513.00 ms** | 566, 494, 510, 496, 499 | Baseline | Zygote retains execution slice before child starts initialization. |
+  | **`sched_child_runs_first = 1` [KTweak Tuned]** | **477.40 ms** | 476, 467, 478, 491, 475 | **-35.60 ms (-6.94%)** | **Accelerated launch latency**: child process executes immediately upon fork; eliminates 566ms jitter spike. |
+
+  #### 2. Suite B: CFS Preemption Granularity (`sched_latency_ns` / `sched_min_granularity_ns` / `sched_wakeup_granularity_ns`)
+  - Objective: Test whether reducing minimum task granularity to 500us (KTweak Balance) or 100us (KTweak Latency) improves cross-cluster thread migration latency or causes scheduler thrashing.
+  | Profile | Latency / Min / Wake | Cross-Switch 0->4 (us) | Raw Latencies (3 reps) | Multi-Core Throughput (Mops/s) | Delta vs Whyred Tuned |
+  | :--- | :---: | :---: | :---: | :---: | :--- |
+  | **Whyred Tuned [Baseline]** | `4ms / 1ms / 1ms` | **15.40 us** | 15.34, 15.39, 15.46 | **960.45 Mops/s** | **Optimal**: balanced preemption without context switch thrashing. |
+  | **KTweak Balance** | `4ms / 500us / 2ms` | **24.42 us** | 34.53, 19.27, 19.44 | 940.93 Mops/s | **+58.6% slower switch latency**; -2.0% multi-core degradation. |
+  | **KTweak Latency** | `1ms / 100us / 500us`| **68.72 us** | 78.59, 59.29, 68.29 | 895.04 Mops/s | **+346% slower (4.5x latency penalty)**; **-6.8% multi-core degradation**. |
+
+  #### 3. Suite C: TCP Network Stack Acceleration (`tcp_fastopen` / `tcp_ecn` / `tcp_syncookies`)
+  - Objective: Measure TCP handshake connection latency and overall HTTP retrieval time over active network interface.
+  | Profile | FastOpen / ECN / SYN | Mean Connect Time (ms) | Raw Connects (5 reps) | Mean Total Time (ms) | Raw Totals (5 reps) | Delta |
+  | :--- | :---: | :---: | :---: | :---: | :--- |
+  | **Stock Android Default** | `1 / 2 / 1` | **61.3 ms** | 130.4, 52.5, 39.0, 37.1, 47.5 | **232.2 ms** | 300.6, 221.7, 210.6, 209.1, 219.1 | Baseline |
+  | **KTweak Network Tuned** | `3 / 1 / 0` | **29.9 ms** | 30.5, 27.8, 32.1, 27.3, 31.8 | **200.6 ms** | 201.7, 197.5, 203.4, 199.1, 201.4 | **-51.2% connect (-31.4 ms)**; **-13.6% total time** |
+
+* **Comprehensive Audit Conclusions & Falsifications**:
+  1. **Validated Positive Finding - `sched_child_runs_first = 1`**: Directly accelerates application cold starts by **-6.94% (-35.6 ms)** by prioritizing the new application thread immediately upon Zygote `fork()`.
+  2. **Validated Positive Finding - Bidirectional TCP FastOpen (`tcp_fastopen = 3`) & ECN (`tcp_ecn = 1`)**: Reduces TCP handshake latency by **-51.2% (-31.4 ms)** by enabling data payload exchange in initial SYN packets.
+  3. **Critical Security Caveat - SYN Cookies**: KTweak sets `tcp_syncookies = 0`, exposing the device to Denial of Service via SYN flood attacks; `tcp_syncookies = 1` must be strictly retained.
+  4. **Major Falsification - KTweak Granularity Thrashing**: KTweak's assumption that reducing `sched_min_granularity_ns` to 500us or 100us minimizes latency is **empirically falsified**. On the 8-core SDM660, tight sub-millisecond slices trigger excessive timer interrupts and register save/restore overhead, making thread switching **4.5x slower (68.7 us vs 15.4 us)** and reducing multi-core compute by **-6.8%**. Whyred's 1 ms granularity is verified optimal.
+* **Restoration Verification**: All parameters across Suites A, B, and C were verified restored to baseline values at benchmark completion.
+* **Verdict**: `[NOMINAL]`. Complete 3-suite community tuning matrix characterized, falsified, and documented with zero code drift.
+
 
