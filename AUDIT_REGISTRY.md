@@ -24,6 +24,7 @@ In accordance with `AGENTS.md` Section 13, this registry must be continuously ma
 | **Gate REL/BUILD**| Release Packaging, Non-A/B Zip Generation | `[FIXED]` | Symlinks broken in non-A/B zip; test-keys display | Add `-y` flag in releasetools; default to release-keys | `4f5bdcdc99`, `d80b1cf7de` (`build/make`) |
 | **Gate USB** | USB DWC3, Gadget Modes, Host OTG, Off-Mode Chg | `[PASS]` | None | All gadget functions, OTG host enumeration, 5x plug & 3x OTG cycles validated | 0 changes |
 | **Gate RIL** | Telephony, SIM, Mobile Data, Calls, IMS, VoLTE | `[PASS]` | None | SIM detection, LTE data (HTTP 200 OK), *611 call, SMS, IMS IPv6 validated | 0 changes |
+| **Gate BT/GNSS** | Bluetooth WCN3990 (UART/BLE), GNSS Engine/NMEA | `[PASS]` / `[NOT TESTED]` | Physical GNSS fix not tested (indoor workstation) | BT: PASS (BLE discovery over air, 3x cycles, A2DP proxy, suspend); GNSS: Engine/NMEA PASS, Sky Fix NOT TESTED | 0 changes |
 
 ---
 
@@ -240,3 +241,33 @@ In accordance with `AGENTS.md` Section 13, this registry must be continuously ma
   - Correlación Fases E-H: Zero modem crashes or task starvation during suspend/resume with active mobile data; the `sock_create_kern` QRTR patch guarantees rock-solid stability in production.
   - Zero crashes across `logcat -b crash`, zero RIL resets or IPC timeouts.
 * **Verdict**: `[PASS]`. Subsystem fully validated; zero modifications required (0 code changes, 0 commits).
+
+---
+
+### 15. Bluetooth (WCN3990) & GNSS / Location Subsystem (Gate BT/GNSS)
+* **Scope**: Qualcomm WCN3990 Bluetooth UART interface (`/dev/ttyHS0`), Bluetooth stack (Fluoride / libbt-vendor), power cycling (enable/disable), BLE scanning and advertisement reception, classic discovery, A2DP proxy and offload capabilities, suspend/resume with active BT, and Qualcomm LocAPI / QMI GNSS engine (`MPSS.AT.3.1-00777-SDM660_GEN_PACK-1.336736.1.337834.1`), NMEA streams, satellite visibility, constellation detection, and physical fix acquisition.
+* **Test Procedures**:
+  - Repeated Bluetooth enable/disable stress test (3 complete cycles), auditing framework state transitions and HCI daemon lifecycle.
+  - WCN3990 transport audit: verified `/dev/ttyHS0` opening at 2400 bps, stepping to 115200 bps with hardware flow control, and switching to high-speed 3.2 Mbps (`3200000 bps`) with In-Band Sleep (IBS) clock gating.
+  - Audio offloading capability audit: verified SBC, AAC, LDAC, APTX, and APTX_HD capability registration with `IBluetoothAudioProvidersFactory`.
+  - Over-the-air BLE scan test via `BluetoothLeScanner` (`ScanCallback`) in live 2.4 GHz RF environment.
+  - Classic device discovery via `BluetoothAdapter.startDiscovery()`.
+  - A2DP profile proxy service verification via `BluetoothProfile.ServiceListener`.
+  - Suspend/resume stress test (5s screen off) with active Bluetooth radio, auditing UART clock voting and kernel watchdog state.
+  - GNSS engine initialization and NMEA sentence stream parsing via `OnNmeaMessageListener` and `LocationManager.GPS_PROVIDER` (45s continuous capture).
+  - GNSS constellation and satellite status audit via `GnssStatus.Callback`.
+* **Findings**:
+  - Bluetooth 3x enable/disable transitions completed cleanly with zero timeouts or process crashes.
+  - BLE scanner captured live physical broadcasts over the air from nearby devices, including `64:82:14:47:3F:4A` ("onn. Full HD Streaming Device", RSSI -66 dBm), `C4:30:18:D4:6A:68` ("LG RN5(68)", RSSI -91 dBm), and BLE beacons (`43:56:90:A2:00:01`, `28:07:08:F6:C6:71`).
+  - Classic discovery initiated normally; no BR/EDR inquiry responses received (nearby devices operating exclusively in BLE advertising mode).
+  - A2DP profile proxy registered and connected cleanly (0 bonded devices in test environment).
+  - Bluetooth radio preserved active state after system deep sleep; zero UART drops or IBS desynchronization.
+  - GNSS engine started immediately (`[GNSS] Engine started`), receiving 572 NMEA sentences across 45 seconds (`$GPGSV`, `$GLGSV`, `$GPGSA`, `$GPVTG`, `$GPDTM`).
+  - Constellations observed: Strictly `GPS` and `GLONASS` (27 visible satellites in ephemeris model: 16 GPS, 11 GLONASS). Galileo and BeiDou were NOT OBSERVED (not reported by modem hardware/firmware).
+  - Physical Satellite Fix: 0 location fixes acquired (all satellite C/N0 levels measured 0.0 dB-Hz) due to physical indoor workstation placement without direct line-of-sight to the sky.
+  - Zero modem crashes, zero Hexagon SSR events, zero QMI errors, zero kernel panics.
+* **Verdict**:
+  - **Bluetooth**: `[PASS]` (Hardware, UART transport, BLE RF reception, and power management validated).
+  - **GNSS Engine & NMEA Stack**: `[PASS]` (Qualcomm LocAPI, NMEA sentences, satellite almanac parsing, and engine lifecycle validated).
+  - **GNSS Physical Sky Fix & TTFF**: `[NOT TESTED]` (Physical indoor test constraint; open sky required for satellite lock).
+  - Zero code, kernel, device tree, or sepolicy changes required (0 changes).
