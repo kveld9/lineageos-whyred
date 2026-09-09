@@ -42,7 +42,8 @@ lineageos-whyred/
 * **Operating System & Userspace (AOSP / LineageOS):**
   * **Android Version:** 14 (LineageOS 21.0, production `user` build).
   * **Security Patch Level:** August 2026 (`2026-08-01` platform patch / November 2018 vendor patch).
-  * **Display & Compositor:** SurfaceFlinger Gaussian blur disabled (`supports_background_blur=0`), offloading translucent UI scrims to Qualcomm MDP5 Hardware Composer (HWC) for stable 60 fps rendering.
+  * **Display & Compositor:** SurfaceFlinger Gaussian background blur disabled (`ro.surface_flinger.supports_background_blur=0`, `persist.sys.sf.disable_blurs=1`), offloading translucent UI scrims to Qualcomm MDP5 Hardware Composer (HWC) to prevent GPU fillrate saturation on Adreno 509 and guarantee consistent 60 fps rendering without dropped frames.
+  * **UI Animation Responsiveness:** Default animation speed scales tuned out-of-the-box to **`0.6x`** across window animations (`window_animation_scale`), transitions (`transition_animation_scale`), and animator durations (`animator_duration_scale`), eliminating standard AOSP 1.0x latency while preserving smooth visual feedback.
   * **Zero-Bloat Baseline:** Pure AOSP framework free from vendor MIUI/HyperOS analytics and background telemetry daemons.
 
 * **Kernel & Core Subsystems (Linux 4.19):**
