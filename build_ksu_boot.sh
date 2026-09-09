@@ -23,7 +23,8 @@ if [ ! -d "${KERNEL_DIR}" ]; then
     exit 1
 fi
 
-CURRENT_BRANCH=$(git -C "${KERNEL_DIR}" branch --show-current)
+CURRENT_BRANCH=$(git -C "${KERNEL_DIR}" branch --show-current 2>/dev/null || true)
+CURRENT_BRANCH="${CURRENT_BRANCH:-lineage-21}"
 echo "Current kernel branch: ${CURRENT_BRANCH}"
 
 # Ensure ccache and resource limits
