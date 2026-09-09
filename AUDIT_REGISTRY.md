@@ -239,7 +239,7 @@ In accordance with `AGENTS.md` Section 13, this registry must be continuously ma
   - SMS framework (`isms`) is fully operational; `sendTextForSubscriber` executed cleanly.
   - Mobile data (`rmnet_data1`) passed real HTTPS/TCP traffic (HTTP 200 OK).
   - IMS bearer (`rmnet_data3`) established with dedicated IPv6 addressing and carrier PCSCF assignment; celda reports `mVopsSupport = 2` (Voice over PS supported).
-  - Correlación Fases E-H: Zero modem crashes or task starvation during suspend/resume with active mobile data; the `sock_create_kern` QRTR patch guarantees rock-solid stability in production.
+  - Correlación Fases E-H: Zero modem crashes or task starvation observed during suspend/resume with active mobile data; corroborates the `sock_create_kern` QRTR patch across the tested scenarios.
   - Zero crashes across `logcat -b crash`, zero RIL resets or IPC timeouts.
 * **Verdict**: `[PASS]`. Subsystem fully validated; zero modifications required (0 code changes, 0 commits).
 
@@ -284,9 +284,9 @@ In accordance with `AGENTS.md` Section 13, this registry must be continuously ma
   - Biometric HAL bridge verification: audited `dumpsys fingerprint` (`Fingerprint21` provider) and `com.fingerprints.extension@1.0.so` bridge shim state.
   - Kernel telemetry and crash audit: audited dmesg for Hexagon SSR events, QRTR socket leaks, DWC3 USB suspend `-EBUSY`, and `logcat -b crash` for process exceptions.
 * **Findings**:
-  - WLAN + Bluetooth coexistence: 5/5 HTTP 200 OK queries completed without packet drops or latency spikes while 10 BLE broadcasts were simultaneously captured over the air.
-  - Sensor Hub + Audio + Camera HAL3: All subsystems operated concurrently without DMA buffer collisions, ION heap starvation, or DSP watchdog crashes. Rear camera captured frames cleanly and front camera maintained steady 30.17 FPS with 2.16 ms jitter during active sensor streaming.
-  - Multi-Radio Deep Sleep: System resumed instantaneously after 10s deep sleep with all 4 radios active. Zero Hexagon modem starvation events, zero QRTR crashes, zero watchdog barks, and zero USB bus errors.
+  - WLAN + Bluetooth coexistence: 5/5 HTTP 200 OK queries completed successfully over `wlan0` while 10 BLE broadcasts were captured over the air during the test interval.
+  - Sensor Hub + Audio + Camera HAL3: Subsystems operated concurrently within the tested execution paths; no buffer errors, starvation events, or DSP crashes were observed. Rear camera captured frames cleanly and front camera maintained steady 30.17 FPS with 2.16 ms jitter during active sensor streaming.
+  - Multi-Radio Deep Sleep: System resumed cleanly after 10s deep sleep with all 4 radios active; no Hexagon modem starvation events, QRTR crashes, watchdog barks, or USB bus errors were observed during the tested suspend-resume cycle.
   - Biometric Service: `Fingerprint21` service responsive and operational; HAL deaths since boot: 0.
-  - System Integrity: Uptime 30+ min, CPU idle > 740%, thermal zones nominal (29-37 C), zero kernel panics, zero softlockups, zero SSR restarts, and zero unhandled process crashes.
-* **Verdict**: `[PASS]`. Global cross-subsystem regression test passed without defects; tree is technically stabilized and production-ready (0 code changes, 0 commits).
+  - System Integrity: Uptime 30+ min, CPU idle > 740%, thermal zones nominal (29-37 C), zero kernel panics, zero softlockups, zero SSR restarts, and zero unhandled process crashes across the executed matrix.
+* **Verdict**: `[PASS]`. Global cross-subsystem regression test completed with nominal results across the evaluated matrix (0 code changes, 0 commits).
