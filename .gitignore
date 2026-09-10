@@ -3,6 +3,7 @@
 /out/
 *.zip
 *.img
+*.log
 
 # Cryptographic release keys
 /certs/

@@ -157,6 +157,12 @@ log_error()   { printf "%b[FAIL]%b %s\n" "${COLOR_RED}" "${COLOR_RESET}" "$*"; }
 # ------------------------------------------------------------------------------
 # Device Connection Guard
 # ------------------------------------------------------------------------------
+USER_ID="${USER_ID:-0}"
+ADB_TARGET=()
+if [ -n "${ANDROID_SERIAL:-}" ]; then
+    ADB_TARGET=(-s "${ANDROID_SERIAL}")
+fi
+
 check_adb_device() {
     if ! command -v adb >/dev/null 2>&1; then
         log_error "adb binary not found in PATH. Install android-tools or Android SDK."
@@ -164,7 +170,7 @@ check_adb_device() {
     fi
 
     local device_count
-    device_count=$(adb devices | grep -cv "List of devices attached\|^$" || true)
+    device_count=$(adb "${ADB_TARGET[@]}" devices | grep -cv "List of devices attached\|^$" || true)
 
     if [[ "${device_count}" -eq 0 ]]; then
         log_error "No device connected via ADB. Enable USB debugging and reconnect."
@@ -172,8 +178,10 @@ check_adb_device() {
     fi
 
     local device_model
-    device_model=$(adb shell getprop ro.product.device 2>/dev/null | tr -d '\r')
-    log_info "Connected device: ${COLOR_BOLD}${device_model:-unknown}${COLOR_RESET}"
+    device_model=$(adb "${ADB_TARGET[@]}" shell getprop ro.product.model 2>/dev/null | tr -d '\r')
+    local device_name
+    device_name=$(adb "${ADB_TARGET[@]}" shell getprop ro.product.device 2>/dev/null | tr -d '\r')
+    log_info "Connected device: ${COLOR_BOLD}${device_model:-${device_name:-unknown}}${COLOR_RESET} (${device_name:-unknown})"
 }
 
 # ------------------------------------------------------------------------------
@@ -184,7 +192,7 @@ declare -A ENABLED_PACKAGES=()
 init_package_cache() {
     ENABLED_PACKAGES=()
     local raw_list
-    raw_list=$(adb shell pm list packages -e --user 0 2>/dev/null | tr -d '\r' || true)
+    raw_list=$(adb "${ADB_TARGET[@]}" shell pm list packages -e --user "${USER_ID}" 2>/dev/null | tr -d '\r' || true)
     while IFS= read -r line; do
         local pkg_name="${line#package:}"
         if [[ -n "${pkg_name}" ]]; then
@@ -204,7 +212,7 @@ run_package_action() {
 
     if [[ "${mode}" == "dry-run" ]]; then
         if [[ -n "${ENABLED_PACKAGES["${pkg}"]:-}" ]]; then
-            log_info "[DRY-RUN] Would debloat (currently active): ${pkg}"
+            log_info "[DRY-RUN] Would debloat (currently active for user ${USER_ID}): ${pkg}"
         else
             log_skip "[DRY-RUN] Already removed or disabled: ${pkg}"
         fi
@@ -213,12 +221,12 @@ run_package_action() {
 
     if [[ "${mode}" == "restore" ]]; then
         local out_enable out_install
-        out_enable=$(adb shell pm enable "${pkg}" 2>&1 | tr -d '\r' || true)
-        out_install=$(adb shell cmd package install-existing "${pkg}" 2>&1 | tr -d '\r' || true)
+        out_enable=$(adb "${ADB_TARGET[@]}" shell pm enable --user "${USER_ID}" "${pkg}" 2>&1 | tr -d '\r' || adb "${ADB_TARGET[@]}" shell pm enable "${pkg}" 2>&1 | tr -d '\r' || true)
+        out_install=$(adb "${ADB_TARGET[@]}" shell cmd package install-existing --user "${USER_ID}" "${pkg}" 2>&1 | tr -d '\r' || true)
 
         if echo "${out_enable}" | grep -qi "new state: enabled" || \
            echo "${out_install}" | grep -qE "installed for user|already installed"; then
-            log_success "Restored: ${pkg}"
+            log_success "Restored (user ${USER_ID}): ${pkg}"
             return 0
         fi
         log_skip "Cannot restore (not on system partition): ${pkg}"
@@ -232,17 +240,17 @@ run_package_action() {
     fi
 
     local out
-    out=$(adb shell pm uninstall --user 0 "${pkg}" 2>&1 | tr -d '\r' || true)
+    out=$(adb "${ADB_TARGET[@]}" shell pm uninstall --user "${USER_ID}" "${pkg}" 2>&1 | tr -d '\r' || true)
     if echo "${out}" | grep -qi "Success"; then
-        log_success "Removed: ${pkg}"
+        log_success "Removed (user ${USER_ID}): ${pkg}"
         return 0
     fi
 
     # Fallback to disabling if system forbids uninstallation
     local out_disable
-    out_disable=$(adb shell pm disable-user --user 0 "${pkg}" 2>&1 | tr -d '\r' || true)
+    out_disable=$(adb "${ADB_TARGET[@]}" shell pm disable-user --user "${USER_ID}" "${pkg}" 2>&1 | tr -d '\r' || true)
     if echo "${out_disable}" | grep -qi "new state: disabled-user"; then
-        log_success "Disabled (uninstall restricted): ${pkg}"
+        log_success "Disabled (user ${USER_ID}, uninstall restricted): ${pkg}"
         return 0
     fi
 
@@ -270,13 +278,23 @@ main() {
                 mode="list"
                 shift
                 ;;
+            --user|-u)
+                USER_ID="$2"
+                shift 2
+                ;;
+            --serial|-s)
+                ADB_TARGET=(-s "$2")
+                shift 2
+                ;;
             --help|-h)
-                printf "%b" "${COLOR_BOLD}debloat_whyred.sh${COLOR_RESET} — LineageOS 21.0 ADB Debloater\n\n"
+                printf "%b" "${COLOR_BOLD}debloat_whyred.sh${COLOR_RESET} — LineageOS ADB Debloater\n\n"
                 printf "Usage:\n"
-                printf "  %s             Uninstall safe bloatware packages for user 0\n" "$0"
-                printf "  %s --restore   Re-install uninstalled packages\n" "$0"
-                printf "  %s --dry-run   Preview packages to be processed\n" "$0"
-                printf "  %s --list      Print all registered packages by category\n" "$0"
+                printf "  %s                     Uninstall safe bloatware packages for user %s\n" "$0" "${USER_ID}"
+                printf "  %s --restore           Re-install uninstalled packages\n" "$0"
+                printf "  %s --dry-run           Preview packages to be processed\n" "$0"
+                printf "  %s --list              Print all registered packages by category\n" "$0"
+                printf "  %s --user <id>         Specify target Android user ID (default: 0)\n" "$0"
+                printf "  %s --serial <serial>   Target specific ADB device\n" "$0"
                 exit 0
                 ;;
             *)

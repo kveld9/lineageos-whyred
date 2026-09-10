@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ==============================================================================
-# LineageOS 21.0 (Android 14) for whyred - Automated Release Publisher
+# LineageOS Automated Release Publisher
 # ==============================================================================
 # Generates multi-repository changelogs, computes SHA-256 checksums, and publishes
 # releases to GitHub with all required artifacts.
@@ -11,8 +11,29 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "${ROOT_DIR}"
 
-OUT_DIR="${OUT_DIR:-out/target/product/whyred}"
-DEFAULT_TAG="v21.0-$(date +%Y%m%d)-whyred"
+DEVICE="${DEVICE:-whyred}"
+BUILD_VARIANT="${BUILD_VARIANT:-user}"
+OUT_DIR="${OUT_DIR:-out/target/product/${DEVICE}}"
+KERNEL_DIR="${KERNEL_DIR:-kernel/xiaomi/sdm660}"
+
+# Locate system build.prop dynamically
+BUILD_PROP="${OUT_DIR}/system/build.prop"
+[ ! -f "${BUILD_PROP}" ] && BUILD_PROP="${OUT_DIR}/system/system/build.prop"
+
+# Dynamic metadata extraction from build artifacts and source tree
+LINEAGE_VER=$(grep "^ro.lineage.build.version=" "${BUILD_PROP}" 2>/dev/null | cut -d'=' -f2 || echo "21.0")
+LINEAGE_VER="${LINEAGE_VER:-21.0}"
+ANDROID_VERSION=$(grep "^ro.build.version.release=" "${BUILD_PROP}" 2>/dev/null | cut -d'=' -f2 || echo "14")
+ANDROID_VERSION="${ANDROID_VERSION:-14}"
+SECURITY_PATCH=$(grep "^ro.build.version.security_patch=" "${BUILD_PROP}" 2>/dev/null | cut -d'=' -f2 || echo "")
+TARGET_DEVICE=$(grep "^ro.product.system.device=" "${BUILD_PROP}" 2>/dev/null | cut -d'=' -f2 || echo "${DEVICE}")
+TARGET_DEVICE="${TARGET_DEVICE:-${DEVICE}}"
+DEVICE_MODEL=$(grep "^ro.product.system.model=" "${BUILD_PROP}" 2>/dev/null | cut -d'=' -f2 || echo "Xiaomi Redmi Note 5 Pro")
+DEVICE_MODEL="${DEVICE_MODEL:-Xiaomi Redmi Note 5 Pro}"
+KERNEL_VERSION=$(awk '/^VERSION =/ {v=$3} /^PATCHLEVEL =/ {p=$3} /^SUBLEVEL =/ {s=$3} END {print v "." p "." s}' "${KERNEL_DIR}/Makefile" 2>/dev/null || echo "4.19")
+KERNEL_VERSION="${KERNEL_VERSION:-4.19}"
+
+DEFAULT_TAG="v${LINEAGE_VER}-$(date +%Y%m%d)-${TARGET_DEVICE}"
 TAG=""
 AUTO_CONFIRM=false
 DRY_RUN=false
@@ -53,14 +74,14 @@ done
 
 if [ -z "${TAG}" ]; then
     if [ "${KERNEL_ONLY}" = true ]; then
-        TAG="kernel-${KERNEL_VARIANT}-$(date +%Y%m%d)-whyred"
+        TAG="kernel-${KERNEL_VARIANT}-$(date +%Y%m%d)-${TARGET_DEVICE}"
     else
         TAG="${DEFAULT_TAG}"
     fi
 fi
 
 echo "=========================================================="
-echo " LineageOS 21.0 Release Publisher for Redmi Note 5 Pro"
+echo " LineageOS ${LINEAGE_VER} Release Publisher for ${DEVICE_MODEL} (${TARGET_DEVICE})"
 echo " Target Tag: ${TAG}"
 echo " Output Directory: ${OUT_DIR}"
 if [ "${KERNEL_ONLY}" = true ]; then
@@ -89,7 +110,7 @@ BOOT_IMG="${OUT_DIR}/boot.img"
 BOOT_KSU_IMG="${OUT_DIR}/boot-ksu.img"
 BOOT_RESUKISU_IMG="${OUT_DIR}/boot-resukisu.img"
 RECOVERY_IMG="${OUT_DIR}/recovery.img"
-ROM_ZIP=$(ls -t "${OUT_DIR}"/lineage-21.0-*-UNOFFICIAL-whyred.zip 2>/dev/null | head -n 1 || true)
+ROM_ZIP=$(ls -t "${OUT_DIR}"/lineage-${LINEAGE_VER}-*-${TARGET_DEVICE}.zip "${OUT_DIR}"/lineage-*.zip 2>/dev/null | grep -v "ota" | head -n 1 || true)
 
 RELEASE_ASSETS=()
 
@@ -218,21 +239,13 @@ generate_repo_log() {
     fi
 }
 
-# Extract dynamic metadata from source tree and build artifacts
-KERNEL_VERSION=$(awk '/^VERSION =/ {v=$3} /^PATCHLEVEL =/ {p=$3} /^SUBLEVEL =/ {s=$3} END {print v "." p "." s}' kernel/xiaomi/sdm660/Makefile 2>/dev/null || echo "4.19")
-BUILD_PROP="${OUT_DIR}/system/build.prop"
-[ ! -f "${BUILD_PROP}" ] && BUILD_PROP="${OUT_DIR}/system/system/build.prop"
-ANDROID_VERSION=$(grep "^ro.build.version.release=" "${BUILD_PROP}" 2>/dev/null | cut -d'=' -f2 || echo "14")
-SECURITY_PATCH=$(grep "^ro.build.version.security_patch=" "${BUILD_PROP}" 2>/dev/null | cut -d'=' -f2 || echo "")
-LINEAGE_VER=$(grep "^ro.lineage.build.version=" "${BUILD_PROP}" 2>/dev/null | cut -d'=' -f2 || echo "21.0")
-
 CHANGELOG_BODY=""
 REPOS_TO_CHECK=(
     ".:Root Orchestration & Manifests"
-    "device/xiaomi/whyred:Device Tree (whyred)"
+    "device/xiaomi/${TARGET_DEVICE}:Device Tree (${TARGET_DEVICE})"
     "device/xiaomi/sdm660-common:Common Device Tree (sdm660-common)"
-    "kernel/xiaomi/sdm660:Kernel Tree (Linux ${KERNEL_VERSION})"
-    "vendor/xiaomi/whyred:Proprietary Vendor Blobs"
+    "${KERNEL_DIR}:Kernel Tree (Linux ${KERNEL_VERSION})"
+    "vendor/xiaomi/${TARGET_DEVICE}:Proprietary Vendor Blobs"
     "build/make:Android Build System"
 )
 
@@ -258,16 +271,16 @@ fi
 NOTES_FILE="${OUT_DIR}/release_notes_${TAG}.md"
 
 if [ "${KERNEL_ONLY}" = true ]; then
-    RELEASE_TITLE="Linux Kernel ${KERNEL_VERSION} (${KERNEL_VARIANT}) for whyred"
+    RELEASE_TITLE="Linux Kernel ${KERNEL_VERSION} (${KERNEL_VARIANT}) for ${TARGET_DEVICE}"
     cat <<EOF > "${NOTES_FILE}"
-# Linux Kernel ${KERNEL_VERSION} (${KERNEL_VARIANT}) for Xiaomi Redmi Note 5 Pro (whyred)
+# Linux Kernel ${KERNEL_VERSION} (${KERNEL_VARIANT}) for ${DEVICE_MODEL} (${TARGET_DEVICE})
 
-Dedicated kernel release for **whyred** powered by **Linux Kernel ${KERNEL_VERSION}** (ThinLTO Clang optimized).
+Dedicated kernel release for **${TARGET_DEVICE}** powered by **Linux Kernel ${KERNEL_VERSION}** (ThinLTO Clang optimized).
 
 - **Kernel Variant**: ${KERNEL_VARIANT}
 - **Kernel Base**: Linux ${KERNEL_VERSION}
 - **Compiler**: Clang (ThinLTO + Polly optimizations)
-- **Target Device**: Xiaomi Redmi Note 5 / Note 5 Pro (\`whyred\`)
+- **Target Device**: ${DEVICE_MODEL} (\`${TARGET_DEVICE}\`)
 
 ## What's Changed in this Release
 
@@ -289,14 +302,15 @@ $(cat "${CHECKSUMS_FILE}")
 
 EOF
 else
-    RELEASE_TITLE="LineageOS ${LINEAGE_VER} (Android ${ANDROID_VERSION}) for whyred"
+    RELEASE_TITLE="LineageOS ${LINEAGE_VER} (Android ${ANDROID_VERSION}) for ${TARGET_DEVICE}"
     cat <<EOF > "${NOTES_FILE}"
-# LineageOS ${LINEAGE_VER} (Android ${ANDROID_VERSION}) for Xiaomi Redmi Note 5 Pro (whyred)
+# LineageOS ${LINEAGE_VER} (Android ${ANDROID_VERSION}) for ${DEVICE_MODEL} (${TARGET_DEVICE})
 
-Production release of **LineageOS ${LINEAGE_VER}** (Android ${ANDROID_VERSION}) powered by **Linux Kernel ${KERNEL_VERSION}** for \`whyred\`.
+Production release of **LineageOS ${LINEAGE_VER}** (Android ${ANDROID_VERSION}) powered by **Linux Kernel ${KERNEL_VERSION}** for \`${TARGET_DEVICE}\`.
 
-- **Build Target**: \`lineage_whyred-user\` (Signed with private release-keys)$([ -n "${SECURITY_PATCH}" ] && echo -e "\n- **Security Patch Level**: ${SECURITY_PATCH}")
+- **Build Target**: \`lineage_${TARGET_DEVICE}-${BUILD_VARIANT:-user}\` (Signed with private release-keys)$([ -n "${SECURITY_PATCH}" ] && echo -e "\n- **Security Patch Level**: ${SECURITY_PATCH}")
 - **Kernel Base**: Linux ${KERNEL_VERSION} (ThinLTO Clang optimized)
+- **Target Device**: ${DEVICE_MODEL} (\`${TARGET_DEVICE}\`)
 
 ## What's Changed in this Release
 
