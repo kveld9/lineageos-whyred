@@ -31,8 +31,8 @@ echo "Current kernel branch: ${CURRENT_BRANCH}"
 export USE_CCACHE=1
 export CCACHE_EXEC=$(which ccache)
 export CCACHE_DIR="${HOME}/.ccache"
-export GOMEMLIMIT=16GiB
-export GOMAXPROCS=8
+export GOMEMLIMIT="${GOMEMLIMIT:-16GiB}"
+export GOMAXPROCS="${GOMAXPROCS:-$(nproc 2>/dev/null || echo 8)}"
 
 # Backup stock boot.img if present
 if [ -f "${OUT_DIR}/boot.img" ]; then

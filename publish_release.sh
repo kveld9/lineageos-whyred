@@ -218,12 +218,20 @@ generate_repo_log() {
     fi
 }
 
+# Extract dynamic metadata from source tree and build artifacts
+KERNEL_VERSION=$(awk '/^VERSION =/ {v=$3} /^PATCHLEVEL =/ {p=$3} /^SUBLEVEL =/ {s=$3} END {print v "." p "." s}' kernel/xiaomi/sdm660/Makefile 2>/dev/null || echo "4.19")
+BUILD_PROP="${OUT_DIR}/system/build.prop"
+[ ! -f "${BUILD_PROP}" ] && BUILD_PROP="${OUT_DIR}/system/system/build.prop"
+ANDROID_VERSION=$(grep "^ro.build.version.release=" "${BUILD_PROP}" 2>/dev/null | cut -d'=' -f2 || echo "14")
+SECURITY_PATCH=$(grep "^ro.build.version.security_patch=" "${BUILD_PROP}" 2>/dev/null | cut -d'=' -f2 || echo "")
+LINEAGE_VER=$(grep "^ro.lineage.build.version=" "${BUILD_PROP}" 2>/dev/null | cut -d'=' -f2 || echo "21.0")
+
 CHANGELOG_BODY=""
 REPOS_TO_CHECK=(
     ".:Root Orchestration & Manifests"
     "device/xiaomi/whyred:Device Tree (whyred)"
     "device/xiaomi/sdm660-common:Common Device Tree (sdm660-common)"
-    "kernel/xiaomi/sdm660:Kernel Tree (Linux 4.19.325)"
+    "kernel/xiaomi/sdm660:Kernel Tree (Linux ${KERNEL_VERSION})"
     "vendor/xiaomi/whyred:Proprietary Vendor Blobs"
     "build/make:Android Build System"
 )
@@ -250,14 +258,14 @@ fi
 NOTES_FILE="${OUT_DIR}/release_notes_${TAG}.md"
 
 if [ "${KERNEL_ONLY}" = true ]; then
-    RELEASE_TITLE="Linux Kernel 4.19 (${KERNEL_VARIANT}) for whyred"
+    RELEASE_TITLE="Linux Kernel ${KERNEL_VERSION} (${KERNEL_VARIANT}) for whyred"
     cat <<EOF > "${NOTES_FILE}"
-# Linux Kernel 4.19 (${KERNEL_VARIANT}) for Xiaomi Redmi Note 5 Pro (whyred)
+# Linux Kernel ${KERNEL_VERSION} (${KERNEL_VARIANT}) for Xiaomi Redmi Note 5 Pro (whyred)
 
-Dedicated kernel release for **whyred** powered by **Linux Kernel 4.19.325** (ThinLTO Clang optimized).
+Dedicated kernel release for **whyred** powered by **Linux Kernel ${KERNEL_VERSION}** (ThinLTO Clang optimized).
 
 - **Kernel Variant**: ${KERNEL_VARIANT}
-- **Linux Base**: 4.19.325
+- **Kernel Base**: Linux ${KERNEL_VERSION}
 - **Compiler**: Clang (ThinLTO + Polly optimizations)
 - **Target Device**: Xiaomi Redmi Note 5 / Note 5 Pro (\`whyred\`)
 
@@ -281,22 +289,14 @@ $(cat "${CHECKSUMS_FILE}")
 
 EOF
 else
-    RELEASE_TITLE="LineageOS 21.0 (Android 14) for whyred"
+    RELEASE_TITLE="LineageOS ${LINEAGE_VER} (Android ${ANDROID_VERSION}) for whyred"
     cat <<EOF > "${NOTES_FILE}"
-# LineageOS 21.0 (Android 14) for Xiaomi Redmi Note 5 Pro (whyred)
+# LineageOS ${LINEAGE_VER} (Android ${ANDROID_VERSION}) for Xiaomi Redmi Note 5 Pro (whyred)
 
-Unofficial production release of **LineageOS 21.0** (Android 14) powered by **Linux Kernel 4.19** (4.19.325) for \`whyred\`.
+Production release of **LineageOS ${LINEAGE_VER}** (Android ${ANDROID_VERSION}) powered by **Linux Kernel ${KERNEL_VERSION}** for \`whyred\`.
 
-## System Specifications & Build Details
-
-- **Android Version**: 14 (LineageOS 21.0)
-- **Linux Kernel**: 4.19.325 (ThinLTO Clang optimized)
-- **Build Variant**: \`user\` (Signed with private release-keys)
-- **Security Patch Level**: August 2026
-- **Storage / File System**: File-Based Encryption (FBE / ICE), F2FS data formatting strongly recommended
-- **SELinux**: Enforcing
-- **ZRAM**: 2GB LZ4 compressed swap
-- **eMMC I/O**: Configured MMC queue depth 128/256 for sustained transfer speed
+- **Build Target**: \`lineage_whyred-user\` (Signed with private release-keys)$([ -n "${SECURITY_PATCH}" ] && echo -e "\n- **Security Patch Level**: ${SECURITY_PATCH}")
+- **Kernel Base**: Linux ${KERNEL_VERSION} (ThinLTO Clang optimized)
 
 ## What's Changed in this Release
 
@@ -308,43 +308,11 @@ ${CHANGELOG_BODY}
 $(cat "${CHECKSUMS_FILE}")
 \`\`\`
 
-## Installation Instructions
-
-### Clean Flash (Recommended)
-1. **Flash Recovery via Fastboot**:
-   \`\`\`bash
-   fastboot flash recovery recovery.img
-   fastboot reboot recovery
-   \`\`\`
-2. **Sideload ROM Zip**:
-   \`\`\`bash
-   adb sideload $(basename "${ROM_ZIP}")
-   \`\`\`
-3. **Format Data to F2FS**:
-   - In Recovery: Select **Advanced** > **Reboot to Recovery** (reloads new partition layout).
-   - Select **Factory Reset** > **Format Data / Factory Reset** > **Format Data** (\`yes\`).
-4. **Reboot to System**:
-   - Select **Reboot system now**.
-
-### Root via KernelSU Next + SuSFS (LTS / Stable)
-If you require proven, stable root with Play Integrity pass:
-1. Flash the KernelSU Next boot image:
-   \`\`\`bash
-   fastboot flash boot boot-ksu.img
-   fastboot reboot
-   \`\`\`
-2. Install **KernelSU Next Manager** APK:
-   - Release: https://github.com/KernelSU-Next/KernelSU-Next/releases
-
-### Root via ReSukiSU + SuSFS v2.3.0+ (Bleeding-Edge / Metamodules)
-If you require advanced stealth, metamodules, and multi-manager support:
-1. Flash the ReSukiSU boot image:
-   \`\`\`bash
-   fastboot flash boot boot-resukisu.img
-   fastboot reboot
-   \`\`\`
-2. Install **ReSukiSU Manager** (or any supported multi-manager):
-   - Release: https://github.com/ReSukiSU/ReSukiSU/releases
+## Installation & Root Guides
+* [Installation & Clean Flash Guide](INSTALL.md)
+* [KernelSU Next & SuSFS Setup Guide](KERNELSU.md)
+* [ReSukiSU & Metamodules Guide](RESUKISU.md)
+* [System Debloat Guide](DEBLOAT.md)
 
 EOF
 fi

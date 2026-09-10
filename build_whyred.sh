@@ -10,9 +10,9 @@ export CCACHE_EXEC=$(which ccache)
 export CCACHE_DIR="${HOME}/.ccache"
 ccache -M 50G
 
-# Memory & Concurrency constraints to prevent OOM
-export GOMEMLIMIT=16GiB
-export GOMAXPROCS=8
+# Memory & Concurrency constraints (adaptive to host resources)
+export GOMEMLIMIT="${GOMEMLIMIT:-16GiB}"
+export GOMAXPROCS="${GOMAXPROCS:-$(nproc 2>/dev/null || echo 8)}"
 
 # Ensure cryptographic release keys exist
 mkdir -p certs

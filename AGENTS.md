@@ -225,3 +225,14 @@ If a branch contains work whose preservation status cannot be established with c
 ## 14. Strict English Language Policy
 - **Strict English Across All Repository Artifacts**: All documentation, technical notes, hardware diagnostic reports, `AUDIT_REGISTRY.md` entries, source code comments, script outputs, commit messages, and pull request metadata across this repository and all sub-trees must be written strictly and exclusively in English.
 - **Independence from Conversation Language**: Regardless of the language used in conversational interactions with the user (e.g., Spanish), no non-English content may ever be committed, recorded, or introduced into `AUDIT_REGISTRY.md`, `README.md`, `AGENTS.md`, or any git-tracked artifact.
+
+---
+
+## 15. Dynamic Metadata & Prohibition on Hardcoded Configuration
+- **Dynamic Resolution Required**: Never hardcode temporal dates, security patch levels, kernel versions, Android/LineageOS version numbers, CPU core limits, hardware parameters, or release metadata in orchestration scripts, automation workflows, templates, or documentation generators.
+- **Runtime Discovery**: All build, release, and packaging metadata must be discovered dynamically at runtime:
+  - Kernel versions must be extracted dynamically from the active kernel source tree (`Makefile` / `utsrelease.h`).
+  - Security patch levels, platform version strings, and build IDs must be queried dynamically from active build property files (`build.prop` / `version_util.mk`).
+  - Repository web URLs and commit links must be resolved dynamically from configured Git remotes.
+  - Concurrency and resource allocations (`GOMAXPROCS`, build thread counts) must dynamically adapt to host resources (`nproc`).
+- **No Stale Release Notes Templates**: Release notes generators must never repeat static, redundant platform architecture tables already documented in `README.md` or copy-paste multi-step installation guides already maintained in dedicated documents (`INSTALL.md`, `KERNELSU.md`, `RESUKISU.md`). Release publications must prioritize the isolated release delta (clean changelog, cryptographic digests, and dynamic versioning) with concise direct links to dedicated guides.
