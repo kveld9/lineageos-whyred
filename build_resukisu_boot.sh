@@ -2,20 +2,23 @@
 set -eo pipefail
 
 # ==============================================================================
-# LineageOS 21.0 - Dedicated ReSukiSU + SuSFS Boot Image Builder
+# LineageOS - Dedicated ReSukiSU + SuSFS Boot Image Builder
 # ==============================================================================
 # Checks out the isolated lineage-21-resukisu kernel branch, compiles bootimage,
-# saves out/target/product/whyred/boot-resukisu.img, and safely restores stock branch.
+# saves boot-resukisu.img in target output directory, and safely restores stock branch.
 # ==============================================================================
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "${ROOT_DIR}"
 
-KERNEL_DIR="kernel/xiaomi/sdm660"
-OUT_DIR="${OUT_DIR:-out/target/product/whyred}"
+DEVICE="${DEVICE:-whyred}"
+BUILD_VARIANT="${BUILD_VARIANT:-user}"
+KERNEL_DIR="${KERNEL_DIR:-kernel/xiaomi/sdm660}"
+OUT_DIR="${OUT_DIR:-out/target/product/${DEVICE}}"
+RESUKISU_BRANCH="${RESUKISU_BRANCH:-lineage-21-resukisu}"
 
 echo "=========================================================="
-echo " Building ReSukiSU + SuSFS Boot Image for whyred"
+echo " Building ReSukiSU + SuSFS Boot Image for ${DEVICE}"
 echo "=========================================================="
 
 if [ ! -d "${KERNEL_DIR}" ]; then
@@ -30,8 +33,22 @@ echo "Current kernel branch: ${CURRENT_BRANCH}"
 # Ensure ccache and resource limits
 export USE_CCACHE=1
 export CCACHE_EXEC=$(which ccache)
-export CCACHE_DIR="${HOME}/.ccache"
-export GOMEMLIMIT="${GOMEMLIMIT:-16GiB}"
+export CCACHE_DIR="${CCACHE_DIR:-${HOME}/.ccache}"
+CCACHE_SIZE="${CCACHE_SIZE:-50G}"
+if [ -n "${CCACHE_EXEC}" ]; then
+    "${CCACHE_EXEC}" -M "${CCACHE_SIZE}" >/dev/null 2>&1 || true
+fi
+
+if [ -z "${GOMEMLIMIT:-}" ]; then
+    total_mem_kb=$(awk '/MemTotal/ {print $2}' /proc/meminfo 2>/dev/null || true)
+    total_mem_kb="${total_mem_kb:-0}"
+    if [ "${total_mem_kb}" -gt 0 ]; then
+        limit_mib=$(( total_mem_kb * 75 / 100 / 1024 ))
+        export GOMEMLIMIT="${limit_mib}MiB"
+    else
+        export GOMEMLIMIT="16GiB"
+    fi
+fi
 export GOMAXPROCS="${GOMAXPROCS:-$(nproc 2>/dev/null || echo 8)}"
 
 # Backup stock boot.img if present
@@ -56,12 +73,12 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-echo "Switching kernel tree to 'lineage-21-resukisu'..."
-git -C "${KERNEL_DIR}" checkout lineage-21-resukisu
+echo "Switching kernel tree to '${RESUKISU_BRANCH}'..."
+git -C "${KERNEL_DIR}" checkout "${RESUKISU_BRANCH}"
 
 # Ensure build environment
 source build/envsetup.sh
-breakfast whyred user
+breakfast "${DEVICE}" "${BUILD_VARIANT}"
 
 echo "Compiling bootimage (ReSukiSU + SuSFS)..."
 mka bootimage
