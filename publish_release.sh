@@ -181,6 +181,9 @@ git fetch --tags origin 2>/dev/null || true
 
 # Find latest tag or fallback date
 LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || true)
+if [ "${LAST_TAG}" = "${TAG}" ]; then
+    LAST_TAG=$(git describe --tags --abbrev=0 "${TAG}^" 2>/dev/null || true)
+fi
 if [ -n "${LAST_TAG}" ]; then
     SINCE_DATE=$(git log -1 --format=%cI "${LAST_TAG}" 2>/dev/null || true)
 else
