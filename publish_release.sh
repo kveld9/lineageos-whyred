@@ -200,10 +200,20 @@ generate_repo_log() {
             # In root orchestration, exclude all internal docs churn, retaining functional features, fixes, and build tools
             filter_regex="^(docs|chore)"
         fi
+
+        # Resolve GitHub web URL for explicit commit hyperlinks across all subrepositories
+        local raw_url=$(git -C "${repo_path}" config --get remote.origin.url 2>/dev/null || git -C "${repo_path}" config --get remote.github.url 2>/dev/null || true)
+        local web_url=$(echo "${raw_url}" | sed -E 's|git@github.com:|https://github.com/|; s|\.git$||')
+
+        local format_str="* %s (%h)"
+        if [ -n "${web_url}" ]; then
+            format_str="* %s ([%h](${web_url}/commit/%H))"
+        fi
+
         if [ -n "${SINCE_DATE}" ]; then
-            git -C "${repo_path}" log --no-merges --since="${SINCE_DATE}" --pretty=format:"* %s (%h)" -E --invert-grep --grep="${filter_regex}" 2>/dev/null || true
+            git -C "${repo_path}" log --no-merges --since="${SINCE_DATE}" --pretty=format:"${format_str}" -E --invert-grep --grep="${filter_regex}" 2>/dev/null || true
         else
-            git -C "${repo_path}" log -n 15 --no-merges --pretty=format:"* %s (%h)" -E --invert-grep --grep="${filter_regex}" 2>/dev/null || true
+            git -C "${repo_path}" log -n 15 --no-merges --pretty=format:"${format_str}" -E --invert-grep --grep="${filter_regex}" 2>/dev/null || true
         fi
     fi
 }
