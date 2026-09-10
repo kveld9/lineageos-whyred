@@ -356,7 +356,7 @@ In accordance with `AGENTS.md` Section 13, this registry must be continuously ma
   - Runtime Access: Temporary `su` root permissions via `boot-ksu.img` to write to `root:root 0644` sysfs/procfs nodes in memory without modifying `/system` or `/vendor`.
   - Benchmark Tool: Native AOSP Clang-compiled binary `/data/local/tmp/bench_suite` executing micro-benchmarks for I/O (`io`), scheduler switch latency (`sched`), CPU single-thread (`single`), and memory bandwidth (`mem`).
   - Iterations: 3 consecutive runs per state with automated baseline restoration between suites.
-  - Raw Telemetry Archive: `/home/kveld/.gemini/antigravity-ide/brain/7a329767-a7e5-4d25-b611-f5548e0e963f/scratch/live_benchmark_results.json`.
+  - Raw Telemetry Archive: `scratch/live_benchmark_results.json`.
 
 * **Test Matrix & Comparative Data**:
 
