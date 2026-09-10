@@ -55,14 +55,16 @@ case "${ACTION}" in
         ;;
     --all)
         echo "=========================================================="
-        echo " Full Automated Pipeline: ROM -> KSU Kernel -> Release"
+        echo " Full Automated Pipeline: ROM -> 3 Kernels -> Release"
         echo "=========================================================="
         shift 1 || true
-        echo "[1/3] Building clean LineageOS 21.0 ROM (user release)..."
+        echo "[1/4] Building clean LineageOS 21.0 ROM (user release)..."
         mka bacon
-        echo "[2/3] Building KernelSU + SuSFS boot image..."
+        echo "[2/4] Building KernelSU Next + SuSFS boot image..."
         ./build_ksu_boot.sh
-        echo "[3/3] Generating changelogs, checksums & publishing release..."
+        echo "[3/4] Building ReSukiSU + SuSFS boot image..."
+        ./build_resukisu_boot.sh
+        echo "[4/4] Generating changelogs, checksums & publishing release..."
         ./publish_release.sh --yes "$@"
         ;;
     *)
@@ -77,7 +79,7 @@ case "${ACTION}" in
         echo "   ./build_whyred.sh --build-ksu       (Build boot-ksu.img)"
         echo "   ./build_whyred.sh --build-resukisu  (Build boot-resukisu.img)"
         echo "   ./build_whyred.sh --publish         (Publish release to GitHub)"
-        echo "   ./build_whyred.sh --all             (Build ROM + KSU boot + Auto-publish)"
+        echo "   ./build_whyred.sh --all             (Build ROM + 3 Kernels + Auto-publish)"
         echo "=========================================================="
         ;;
 esac

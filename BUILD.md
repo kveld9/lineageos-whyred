@@ -110,7 +110,7 @@ Uploads the compiled artifacts to GitHub Releases with generated changelogs and 
 ```
 
 ### 4. Full End-to-End Pipeline
-Executes the full chain sequentially: ROM compilation &rarr; KernelSU boot compilation &rarr; Checksum generation &rarr; GitHub Release:
+Executes the full chain sequentially: ROM compilation &rarr; KernelSU Next boot compilation &rarr; ReSukiSU boot compilation &rarr; Checksum generation &rarr; GitHub Release:
 ```bash
 ./build_whyred.sh --all
 ```
