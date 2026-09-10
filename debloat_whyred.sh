@@ -141,18 +141,18 @@ readonly THEME_OVERLAYS=(
 # ------------------------------------------------------------------------------
 # UI Styles & Helpers
 # ------------------------------------------------------------------------------
-readonly COLOR_RESET="\033[0m"
-readonly COLOR_BOLD="\033[1m"
-readonly COLOR_GREEN="\033[32m"
-readonly COLOR_YELLOW="\033[33m"
-readonly COLOR_RED="\033[31m"
-readonly COLOR_CYAN="\033[36m"
+readonly COLOR_RESET=$'\033[0m'
+readonly COLOR_BOLD=$'\033[1m'
+readonly COLOR_GREEN=$'\033[32m'
+readonly COLOR_YELLOW=$'\033[33m'
+readonly COLOR_RED=$'\033[31m'
+readonly COLOR_CYAN=$'\033[36m'
 
-log_info()    { printf "%b[INFO]%b %s\n" "${COLOR_CYAN}" "${COLOR_RESET}" "$*"; }
-log_success() { printf "%b[  OK]%b %s\n" "${COLOR_GREEN}" "${COLOR_RESET}" "$*"; }
-log_skip()    { printf "%b[SKIP]%b %s\n" "${COLOR_YELLOW}" "${COLOR_RESET}" "$*"; }
-log_warn()    { printf "%b[WARN]%b %s\n" "${COLOR_YELLOW}" "${COLOR_RESET}" "$*"; }
-log_error()   { printf "%b[FAIL]%b %s\n" "${COLOR_RED}" "${COLOR_RESET}" "$*"; }
+log_info()    { printf "%s[INFO]%s %s\n" "${COLOR_CYAN}" "${COLOR_RESET}" "$*"; }
+log_success() { printf "%s[  OK]%s %s\n" "${COLOR_GREEN}" "${COLOR_RESET}" "$*"; }
+log_skip()    { printf "%s[SKIP]%s %s\n" "${COLOR_YELLOW}" "${COLOR_RESET}" "$*"; }
+log_warn()    { printf "%s[WARN]%s %s\n" "${COLOR_YELLOW}" "${COLOR_RESET}" "$*"; }
+log_error()   { printf "%s[FAIL]%s %s\n" "${COLOR_RED}" "${COLOR_RESET}" "$*"; }
 
 # ------------------------------------------------------------------------------
 # Device Connection Guard
