@@ -228,11 +228,26 @@ If a branch contains work whose preservation status cannot be established with c
 
 ---
 
-## 15. Dynamic Metadata & Prohibition on Hardcoded Configuration
-- **Dynamic Resolution Required**: Never hardcode temporal dates, security patch levels, kernel versions, Android/LineageOS version numbers, CPU core limits, hardware parameters, or release metadata in orchestration scripts, automation workflows, templates, or documentation generators.
-- **Runtime Discovery**: All build, release, and packaging metadata must be discovered dynamically at runtime:
-  - Kernel versions must be extracted dynamically from the active kernel source tree (`Makefile` / `utsrelease.h`).
-  - Security patch levels, platform version strings, and build IDs must be queried dynamically from active build property files (`build.prop` / `version_util.mk`).
-  - Repository web URLs and commit links must be resolved dynamically from configured Git remotes.
-  - Concurrency and resource allocations (`GOMAXPROCS`, build thread counts) must dynamically adapt to host resources (`nproc`).
-- **No Stale Release Notes Templates**: Release notes generators must never repeat static, redundant platform architecture tables already documented in `README.md` or copy-paste multi-step installation guides already maintained in dedicated documents (`INSTALL.md`, `KERNELSU.md`, `RESUKISU.md`). Release publications must prioritize the isolated release delta (clean changelog, cryptographic digests, and dynamic versioning) with concise direct links to dedicated guides.
+## 15. Dynamic Architecture, Variable Configuration & Universal Prohibition on Hardcoded Values
+- **Universal Dynamic Principle**: All automation scripts, build orchestrators, release publishers, diagnostic tools, and templates across this repository must be strictly dynamic, variable, and auto-updating. Hardcoding temporal dates, static version numbers, build variants, host resource limits, device codenames, user IDs, or local filesystem paths is strictly prohibited.
+- **Three-Tier Precedence Protocol**:
+  All operational parameters must adhere to a rigid 3-tier precedence hierarchy:
+  1. *Tier 1 (Explicit User Input)*: Command-line arguments (`--tag`, `--user`, `--serial`) and environment variables (`DEVICE`, `BUILD_VARIANT`, `OUT_DIR`, `KERNEL_DIR`, `GOMEMLIMIT`, `GOMAXPROCS`, `USER_ID`, `CCACHE_SIZE`, `CCACHE_DIR`).
+  2. *Tier 2 (Runtime Introspection)*: Dynamic discovery from authoritative live sources (`system/build.prop`, kernel `Makefile`, `git remote`, `git describe`, `nproc`, `/proc/meminfo`, `adb getprop`).
+  3. *Tier 3 (Safe Dynamic Fallbacks)*: Resilient default behaviors that do not crash or produce stale static artifacts.
+- **Host Resource Auto-Adaptation**:
+  - CPU concurrency must query active CPU cores dynamically (`$(nproc)`).
+  - Memory bounds (`GOMEMLIMIT`) must inspect physical host RAM via `/proc/meminfo` (allocating ~75% of total system RAM by default) rather than using static constants.
+  - Ccache sizing and directory paths must adapt to user configurations or sensible dynamic defaults.
+- **Dynamic Release & Artifact Discovery**:
+  - Release tags and titles must be composed dynamically from authoritative platform metadata (`ro.lineage.build.version`, `ro.build.version.release`, `ro.product.system.model`, `ro.product.system.device`).
+  - Target artifact discovery must use pattern globbing and file verification rather than rigid date-stamped or hardcoded filenames.
+  - Multi-repository change logs must resolve remote repository HTTPS web URLs dynamically to construct valid commit hyperlinks across all sub-trees.
+  - Changelog delta baselines must self-update dynamically (`git fetch --tags` before/after release, `${TAG}^` stepback on re-publishing).
+- **Zero Static Duplication**:
+  - Ephemeral artifacts (such as release notes and changelogs) must only contain the active changeset delta and cryptographic checksums, accompanied by direct Markdown links to persistent root guides (`INSTALL.md`, `KERNELSU.md`, `RESUKISU.md`, `DEBLOAT.md`).
+  - Never copy-paste static system specification blocks or redundant installation manuals into generated release text.
+- **Dynamic Device & Subsystem Interaction**:
+  - Device-facing scripts (`debloat_whyred.sh`, diagnostic utilities) must detect hardware identifiers dynamically via ADB (`ro.product.model`, `ro.product.device`), support serial targeting (`ANDROID_SERIAL`), and parameterize Android user profile IDs (`USER_ID`).
+- **Strict Prohibition on Local Workstation Paths**:
+  - Absolutely no local absolute paths (e.g. `/home/<user>/...` or workstation directories) may ever appear in scripts, guides, audit registries, or metadata. Always use relative linking or standard POSIX variables (`${PWD}`, `${HOME}`).
