@@ -176,6 +176,9 @@ cat "${CHECKSUMS_FILE}"
 echo ""
 echo "Collecting commits across sub-repositories..."
 
+# Ensure we have the latest remote tags locally
+git fetch --tags origin 2>/dev/null || true
+
 # Find latest tag or fallback date
 LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || true)
 if [ -n "${LAST_TAG}" ]; then
@@ -186,11 +189,18 @@ fi
 
 generate_repo_log() {
     local repo_path="$1"
+    local is_root="$2"
     if [ -d "${repo_path}/.git" ]; then
+        # Exclude internal lab audits, agent rules, and protocol commits
+        local filter_regex="^(docs\(audit|docs\(agents|docs\(protocol|chore\()"
+        if [ "${is_root}" = "true" ]; then
+            # In root orchestration, exclude all internal docs churn, retaining functional features, fixes, and build tools
+            filter_regex="^(docs|chore)"
+        fi
         if [ -n "${SINCE_DATE}" ]; then
-            git -C "${repo_path}" log --no-merges --since="${SINCE_DATE}" --pretty=format:"* %s (%h)" 2>/dev/null || true
+            git -C "${repo_path}" log --no-merges --since="${SINCE_DATE}" --pretty=format:"* %s (%h)" -E --invert-grep --grep="${filter_regex}" 2>/dev/null || true
         else
-            git -C "${repo_path}" log -n 10 --no-merges --pretty=format:"* %s (%h)" 2>/dev/null || true
+            git -C "${repo_path}" log -n 15 --no-merges --pretty=format:"* %s (%h)" -E --invert-grep --grep="${filter_regex}" 2>/dev/null || true
         fi
     fi
 }
@@ -208,7 +218,9 @@ REPOS_TO_CHECK=(
 for entry in "${REPOS_TO_CHECK[@]}"; do
     repo_path="${entry%%:*}"
     repo_title="${entry##*:}"
-    repo_log=$(generate_repo_log "${repo_path}")
+    is_root="false"
+    [ "${repo_path}" = "." ] && is_root="true"
+    repo_log=$(generate_repo_log "${repo_path}" "${is_root}")
     if [ -n "${repo_log}" ]; then
         CHANGELOG_BODY="${CHANGELOG_BODY}
 
@@ -361,6 +373,9 @@ else
         --notes-file "${NOTES_FILE}" \
         "${RELEASE_ASSETS[@]}"
 fi
+
+# Fetch tags locally so subsequent runs calculate exact deltas from this tag
+git fetch --tags origin 2>/dev/null || true
 
 echo ""
 echo "=========================================================="
