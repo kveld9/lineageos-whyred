@@ -57,9 +57,15 @@ lineageos-whyred/
   * **Filesystem:** Flash-Friendly File System (**F2FS**) recommended on `/data` to mitigate eMMC 5.1 random write latency.
   * **Cryptographic Keys:** Signed with private RSA 2048-bit release keys passing Play Integrity (`MEETS_DEVICE_INTEGRITY`).
 
-* **Root & Stealth Subsystem (Optional Variant):**
-  * **KernelSU Next v3.1.0:** Kernel-level privilege management via dedicated driver ioctl interface (`versionCode: 33024`).
-  * **SuSFS v2.0.0:** VFS-level mount isolation masking `/debug_ramdisk`, loop devices, and overlayfs from app and Zygote namespaces.
+* **Root & Stealth Subsystems (Optional Variants):**
+  * **KernelSU Next + SuSFS 2.0.0 (`lineage-21-ksu`):**
+    * **KernelSU Next v3.1.0 (`versionCode: 33024`):** Stable LTS kernel privilege management via dedicated driver ioctl interface and proven manual VFS hooks.
+    * **SuSFS v2.0.0:** VFS-level mount isolation masking `/debug_ramdisk`, loop devices, and overlayfs from app and Zygote namespaces.
+    * **Profile:** Frozen LTS daily driver stability with zero code churn.
+  * **ReSukiSU + SuSFS 2.3.0+ (`lineage-21-resukisu`):**
+    * **ReSukiSU v4.2.0 (`versionCode: 35115`):** Bleeding-edge stealth root with supercall architecture, dynamic module filters, and multi-manager coexistence support (`CONFIG_KSU_MULTI_MANAGER_SUPPORT=y`).
+    * **SuSFS v2.3.0+:** Advanced VFS stealth hooks with dynamic AVC denial spoofing, automated WebView Zygote namespace unmounting, and enhanced mount hiding for non-su processes.
+    * **Profile:** Maximum detection evasion against strict banking apps and modern Play Integrity checks.
 
 ### Documentation & Guides
 
