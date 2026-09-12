@@ -30,6 +30,7 @@ lineageos-whyred/
 ├── build_ksu_boot.sh          # Dedicated KernelSU Next boot image build script
 ├── debloat_whyred.sh          # Modular ADB debloater (102 safe packages for user 0)
 ├── publish_release.sh         # GitHub Release asset publisher & checksum generator
+├── sync_fox_kernel.sh         # OrangeFox recovery prebuilt kernel sync & build dispatcher
 ├── README.md                  # Central repository documentation and navigation
 ├── INSTALL.md                 # Step-by-step flashing & F2FS storage setup guide
 ├── KERNELSU.md                # KernelSU Next & SuSFS stealth configuration guide
