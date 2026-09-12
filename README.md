@@ -24,6 +24,7 @@ This repository orchestrates the build environment, local manifests, documentati
 lineageos-whyred/
 ├── local_manifests/
 │   └── whyred.xml             # Local manifest mapping personal forks into AOSP tree
+├── check_updates.sh           # Autonomous upstream ASB and subsystem changes monitor
 ├── build_whyred.sh            # Unified ROM and KernelSU build automation script
 ├── build_ksu_boot.sh          # Dedicated KernelSU Next boot image build script
 ├── debloat_whyred.sh          # Modular ADB debloater (102 safe packages for user 0)
