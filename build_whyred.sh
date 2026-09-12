@@ -71,16 +71,18 @@ case "${ACTION}" in
         ;;
     --all)
         echo "=========================================================="
-        echo " Full Automated Pipeline: ROM -> 3 Kernels -> Release"
+        echo " Full Automated Pipeline: ROM -> 3 Kernels -> OF Sync -> Release"
         echo "=========================================================="
         shift 1 || true
-        echo "[1/4] Building clean LineageOS ROM (${DEVICE}-${BUILD_VARIANT})..."
+        echo "[1/5] Building clean LineageOS ROM (${DEVICE}-${BUILD_VARIANT})..."
         mka bacon
-        echo "[2/4] Building KernelSU Next + SuSFS boot image..."
+        echo "[2/5] Building KernelSU Next + SuSFS boot image..."
         ./build_ksu_boot.sh
-        echo "[3/4] Building ReSukiSU + SuSFS boot image..."
+        echo "[3/5] Building ReSukiSU + SuSFS boot image..."
         ./build_resukisu_boot.sh
-        echo "[4/4] Generating changelogs, checksums & publishing release..."
+        echo "[4/5] Synchronizing kernel to OrangeFox Recovery & triggering cloud build..."
+        ./sync_fox_kernel.sh --build || true
+        echo "[5/5] Generating changelogs, checksums & publishing release..."
         ./publish_release.sh --yes "$@"
         ;;
     *)
