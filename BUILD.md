@@ -149,6 +149,19 @@ Executes the full chain sequentially: ROM compilation &rarr; KernelSU Next boot 
 ./build_whyred.sh --all
 ```
 
+### 5. Synchronize Kernel to OrangeFox Recovery
+Copies the freshly built Linux 4.19 kernel (`Image.gz-dtb`) into the OrangeFox device tree, commits the changes, and optionally dispatches cloud compilation via GitHub Actions:
+```bash
+# Check if OrangeFox prebuilt kernel matches current build
+./sync_fox_kernel.sh
+
+# Sync kernel, commit and push to OrangeFox repo
+./sync_fox_kernel.sh --sync
+
+# Sync kernel and trigger OrangeFox cloud build on GitHub Actions
+./sync_fox_kernel.sh --build
+```
+
 ---
 
 ## Generated Output Artifacts
