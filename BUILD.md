@@ -97,6 +97,23 @@ Before triggering a full compilation, verify if new monthly Android Security Bul
 
 ---
 
+## One-Click Upstream Sync & Merge Orchestrator (`update_whyred.sh`)
+
+To update all sources, merge incoming kernel/device commits, verify branch parity, and optionally trigger compilation in one single command:
+
+```bash
+# Sync sources and merge upstream changes without compiling
+./update_whyred.sh
+
+# Sync sources, merge upstream, and compile ROM
+./update_whyred.sh --build
+
+# Full pipeline: Sync + Merge + Build ROM + Build 3 Kernels + Publish Release
+./update_whyred.sh --all
+```
+
+---
+
 ## Automated Compilation Pipelines (`build_whyred.sh`)
 
 The repository provides a unified build automation script: [`build_whyred.sh`](build_whyred.sh).
