@@ -80,6 +80,23 @@ The automated build script automatically generates a private, unique set of RSA 
 
 ---
 
+## Upstream & Security Update Monitoring (`check_updates.sh`)
+
+Before triggering a full compilation, verify if new monthly Android Security Bulletins (ASB) or subsystem commits have been published upstream on LineageOS:
+
+```bash
+# Check upstream status across security strings, device trees, and kernel
+./check_updates.sh
+
+# Verbose inspection showing commit subjects
+./check_updates.sh --verbose
+
+# Send desktop notification if updates are available (useful for cron/systemd)
+./check_updates.sh --notify
+```
+
+---
+
 ## Automated Compilation Pipelines (`build_whyred.sh`)
 
 The repository provides a unified build automation script: [`build_whyred.sh`](build_whyred.sh).
