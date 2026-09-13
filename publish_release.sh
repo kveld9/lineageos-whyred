@@ -110,7 +110,23 @@ BOOT_IMG="${OUT_DIR}/boot.img"
 BOOT_KSU_IMG="${OUT_DIR}/boot-ksu.img"
 BOOT_RESUKISU_IMG="${OUT_DIR}/boot-resukisu.img"
 RECOVERY_IMG="${OUT_DIR}/recovery.img"
-ROM_ZIP=$(ls -t "${OUT_DIR}"/lineage-${LINEAGE_VER}-*-${TARGET_DEVICE}.zip "${OUT_DIR}"/lineage-*.zip 2>/dev/null | grep -v "ota" | head -n 1 || true)
+# Detect ROM zip matching tag date or pick newest by version sort
+TAG_DATE=$(echo "${TAG}" | grep -oE '[0-9]{8}' || true)
+if [ -n "${TAG_DATE}" ] && [ -f "${OUT_DIR}/lineage-${LINEAGE_VER}-${TAG_DATE}-UNOFFICIAL-${TARGET_DEVICE}.zip" ]; then
+    ROM_ZIP="${OUT_DIR}/lineage-${LINEAGE_VER}-${TAG_DATE}-UNOFFICIAL-${TARGET_DEVICE}.zip"
+else
+    ROM_ZIP=$(ls -1 "${OUT_DIR}"/lineage-${LINEAGE_VER}-*-${TARGET_DEVICE}.zip "${OUT_DIR}"/lineage-*.zip 2>/dev/null | grep -v "ota" | sort -uV | tail -n 1 || true)
+fi
+
+if [ -n "${ROM_ZIP}" ] && [ -f "${ROM_ZIP}" ]; then
+    # Purge stale ROM packages from prior builds to avoid confusing hardlink accumulation
+    for old_zip in "${OUT_DIR}"/lineage-${LINEAGE_VER}-*-${TARGET_DEVICE}.zip "${OUT_DIR}"/lineage-*.zip; do
+        if [ -f "${old_zip}" ] && [ "${old_zip}" != "${ROM_ZIP}" ] && [[ "${old_zip}" != *"ota"* ]]; then
+            echo "[INFO] Purging obsolete ROM package: $(basename "${old_zip}")"
+            rm -f "${old_zip}" "${old_zip}.sha256sum"
+        fi
+    done
+fi
 
 RELEASE_ASSETS=()
 
@@ -342,6 +358,7 @@ if [ "${DRY_RUN}" = true ]; then
     echo "----------------------------------------------------------"
     echo "[DRY RUN] Would execute:"
     echo "gh release create \"${TAG}\" --title \"${RELEASE_TITLE}\" --notes-file \"${NOTES_FILE}\" ${RELEASE_ASSETS[*]}"
+    rm -f "${NOTES_FILE}"
     exit 0
 fi
 
@@ -371,6 +388,9 @@ fi
 
 # Fetch tags locally so subsequent runs calculate exact deltas from this tag
 git fetch --tags origin 2>/dev/null || true
+
+# Clean up ephemeral release notes
+rm -f "${NOTES_FILE}"
 
 echo ""
 echo "=========================================================="
