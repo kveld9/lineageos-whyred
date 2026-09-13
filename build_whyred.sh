@@ -7,6 +7,7 @@ cd "$(dirname "$0")"
 # Target configuration (dynamic with variable override)
 DEVICE="${DEVICE:-whyred}"
 BUILD_VARIANT="${BUILD_VARIANT:-user}"
+OUT_DIR="${OUT_DIR:-out/target/product/${DEVICE}}"
 
 # Configure CCACHE for faster builds
 export USE_CCACHE=1
@@ -47,6 +48,27 @@ done
 # Setup build environment
 source build/envsetup.sh
 
+BRANCH_DEVICE="${BRANCH_DEVICE:-lineage-21}"
+
+ensure_stock_kernel() {
+    local kernel_dir="kernel/xiaomi/sdm660"
+    if [ -d "${kernel_dir}/.git" ]; then
+        local current_branch
+        current_branch=$(git -C "${kernel_dir}" branch --show-current 2>/dev/null || true)
+        if [ "${current_branch}" != "${BRANCH_DEVICE}" ]; then
+            echo "[INFO] Switching kernel tree from '${current_branch}' to stock branch '${BRANCH_DEVICE}'..."
+            git -C "${kernel_dir}" checkout "${BRANCH_DEVICE}"
+        fi
+    fi
+}
+
+save_stock_kernel() {
+    if [ -f "${OUT_DIR}/obj/KERNEL_OBJ/arch/arm64/boot/Image.gz-dtb" ]; then
+        echo "[INFO] Preserving clean stock kernel artifact to ${OUT_DIR}/Image.gz-dtb-stock..."
+        cp -f "${OUT_DIR}/obj/KERNEL_OBJ/arch/arm64/boot/Image.gz-dtb" "${OUT_DIR}/Image.gz-dtb-stock" 2>/dev/null || true
+    fi
+}
+
 # Configure target device dynamically
 breakfast "${DEVICE}" "${BUILD_VARIANT}"
 
@@ -55,7 +77,9 @@ ACTION="${1:-help}"
 case "${ACTION}" in
     --build)
         echo "Starting LineageOS ROM build (${DEVICE}-${BUILD_VARIANT})..."
+        ensure_stock_kernel
         mka bacon
+        save_stock_kernel
         ;;
     --build-ksu)
         echo "Building dedicated KernelSU boot image..."
@@ -75,13 +99,15 @@ case "${ACTION}" in
         echo "=========================================================="
         shift 1 || true
         echo "[1/5] Building clean LineageOS ROM (${DEVICE}-${BUILD_VARIANT})..."
+        ensure_stock_kernel
         mka bacon
-        echo "[2/5] Building KernelSU Next + SuSFS boot image..."
-        ./build_ksu_boot.sh
-        echo "[3/5] Building ReSukiSU + SuSFS boot image..."
-        ./build_resukisu_boot.sh
-        echo "[4/5] Synchronizing kernel to OrangeFox Recovery & triggering cloud build..."
+        save_stock_kernel
+        echo "[2/5] Synchronizing clean stock kernel to OrangeFox Recovery & triggering cloud build..."
         ./sync_fox_kernel.sh --build || true
+        echo "[3/5] Building KernelSU Next + SuSFS boot image..."
+        ./build_ksu_boot.sh
+        echo "[4/5] Building ReSukiSU + SuSFS boot image..."
+        ./build_resukisu_boot.sh
         echo "[5/5] Generating changelogs, checksums & publishing release..."
         ./publish_release.sh --yes "$@"
         ;;

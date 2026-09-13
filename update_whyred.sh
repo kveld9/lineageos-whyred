@@ -70,10 +70,17 @@ echo "=========================================================="
 COMMON_DIR="device/xiaomi/sdm660-common"
 if [ -d "${COMMON_DIR}/.git" ]; then
     git -C "${COMMON_DIR}" fetch --quiet github "${BRANCH_DEVICE}" 2>/dev/null || true
-    COMMON_PENDING=$(git -C "${COMMON_DIR}" rev-list --count "HEAD..github/${BRANCH_DEVICE}" 2>/dev/null || echo 0)
+    COMMON_PENDING=0
+    if git -C "${COMMON_DIR}" merge-base "HEAD" "github/${BRANCH_DEVICE}" >/dev/null 2>&1; then
+        COMMON_PENDING=$(git -C "${COMMON_DIR}" rev-list --count "HEAD..github/${BRANCH_DEVICE}" 2>/dev/null || echo 0)
+    fi
     if [ "${COMMON_PENDING}" -gt 0 ]; then
         echo "[INFO] Merging ${COMMON_PENDING} commit(s) into ${COMMON_DIR}..."
-        git -C "${COMMON_DIR}" merge --no-edit "github/${BRANCH_DEVICE}"
+        if ! git -C "${COMMON_DIR}" merge --no-edit "github/${BRANCH_DEVICE}"; then
+            echo "[ERROR] Merge collision on ${COMMON_DIR}. Aborting merge."
+            git -C "${COMMON_DIR}" merge --abort
+            exit 1
+        fi
     else
         echo "[OK] ${COMMON_DIR} is already up to date."
     fi
@@ -83,38 +90,68 @@ fi
 KERNEL_DIR="kernel/xiaomi/sdm660"
 if [ -d "${KERNEL_DIR}/.git" ]; then
     git -C "${KERNEL_DIR}" fetch --quiet github "${BRANCH_DEVICE}" 2>/dev/null || true
-    KERNEL_PENDING=$(git -C "${KERNEL_DIR}" rev-list --count "lineage-21..github/${BRANCH_DEVICE}" 2>/dev/null || echo 0)
+    KERNEL_PENDING=0
+    if git -C "${KERNEL_DIR}" merge-base "${BRANCH_DEVICE}" "github/${BRANCH_DEVICE}" >/dev/null 2>&1; then
+        KERNEL_PENDING=$(git -C "${KERNEL_DIR}" rev-list --count "${BRANCH_DEVICE}..github/${BRANCH_DEVICE}" 2>/dev/null || echo 0)
+    fi
 
     if [ "${KERNEL_PENDING}" -gt 0 ]; then
-        echo "[INFO] Merging ${KERNEL_PENDING} commit(s) into kernel branch 'lineage-21'..."
         CURRENT_KERNEL_BRANCH=$(git -C "${KERNEL_DIR}" branch --show-current 2>/dev/null || true)
-        git -C "${KERNEL_DIR}" checkout lineage-21
-        git -C "${KERNEL_DIR}" merge --no-edit "github/${BRANCH_DEVICE}"
 
-        # Inspect if VFS hooks were modified
-        VFS_TOUCHED=$(git -C "${KERNEL_DIR}" diff --name-only "HEAD~${KERNEL_PENDING}..HEAD" | grep -E '^(fs/namei\.c|fs/namespace\.c|fs/open\.c|drivers/kernelsu)' || true)
+        echo "[INFO] Merging ${KERNEL_PENDING} commit(s) into kernel branch '${BRANCH_DEVICE}'..."
+        git -C "${KERNEL_DIR}" checkout "${BRANCH_DEVICE}"
+        if ! git -C "${KERNEL_DIR}" merge --no-edit "github/${BRANCH_DEVICE}"; then
+            echo "[ERROR] Merge collision on ${BRANCH_DEVICE}. Aborting merge."
+            git -C "${KERNEL_DIR}" merge --abort
+            [ -n "${CURRENT_KERNEL_BRANCH}" ] && git -C "${KERNEL_DIR}" checkout "${CURRENT_KERNEL_BRANCH}" 2>/dev/null || true
+            exit 1
+        fi
 
+        # Inspect if VFS or security-sensitive hooks differ between sister branches and stock branch
+        VFS_TOUCHED=""
+        for sister in lineage-21-ksu lineage-21-resukisu; do
+            if git -C "${KERNEL_DIR}" rev-parse --verify "${sister}" >/dev/null 2>&1; then
+                diff_vfs=$(git -C "${KERNEL_DIR}" diff --name-only "${sister}...${BRANCH_DEVICE}" | grep -E '^(fs/|security/selinux/|kernel/reboot\.c|drivers/kernelsu)' || true)
+                if [ -n "${diff_vfs}" ]; then
+                    VFS_TOUCHED="${VFS_TOUCHED}${diff_vfs}"$'\n'
+                fi
+            fi
+        done
+
+        MERGE_FAILED=0
         if [ -n "${VFS_TOUCHED}" ]; then
-            echo "[WARN] Kernel changes modified VFS files:"
-            echo "${VFS_TOUCHED}" | sed 's/^/  * /'
-            echo "[WARN] Manual inspection of SuSFS / ReSukiSU hooks required before auto-rebasing rooted branches."
+            echo "[WARN] Kernel changes touch VFS/security files against sister branches:"
+            echo -e "${VFS_TOUCHED}" | sort -u | sed '/^$/d' | sed 's/^/  * /'
+            echo "[WARN] Manual inspection of SuSFS / ReSukiSU hooks required before auto-merging rooted branches."
+            MERGE_FAILED=1
         else
             echo "[OK] No VFS conflicts detected. Porting foundation changes to sister branches..."
             for sister in lineage-21-ksu lineage-21-resukisu; do
                 if git -C "${KERNEL_DIR}" rev-parse --verify "${sister}" >/dev/null 2>&1; then
-                    echo "  -> Updating branch ${sister}..."
-                    git -C "${KERNEL_DIR}" checkout "${sister}"
-                    git -C "${KERNEL_DIR}" merge --no-edit lineage-21 || {
-                        echo "[WARN] Merge collision on branch ${sister}. Resolve manually."
-                    }
+                    s_pending=$(git -C "${KERNEL_DIR}" rev-list --count "${sister}..${BRANCH_DEVICE}" 2>/dev/null || echo 0)
+                    if [ "${s_pending}" -gt 0 ]; then
+                        echo "  -> Updating branch ${sister} (${s_pending} commit(s) behind)..."
+                        git -C "${KERNEL_DIR}" checkout "${sister}"
+                        if ! git -C "${KERNEL_DIR}" merge --no-edit "${BRANCH_DEVICE}"; then
+                            echo "[ERROR] Merge collision on branch ${sister}. Aborting merge."
+                            git -C "${KERNEL_DIR}" merge --abort
+                            MERGE_FAILED=1
+                            break
+                        fi
+                    fi
                 fi
             done
         fi
 
         # Restore previous branch if set
         [ -n "${CURRENT_KERNEL_BRANCH}" ] && git -C "${KERNEL_DIR}" checkout "${CURRENT_KERNEL_BRANCH}" 2>/dev/null || true
+
+        if [ "${MERGE_FAILED}" -ne 0 ]; then
+            echo "[ERROR] Kernel update requires manual resolution. Halting pipeline."
+            exit 1
+        fi
     else
-        echo "[OK] ${KERNEL_DIR} (lineage-21) is already up to date."
+        echo "[OK] ${KERNEL_DIR} (${BRANCH_DEVICE}) and all sister branches are up to date."
     fi
 fi
 

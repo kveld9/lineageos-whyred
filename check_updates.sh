@@ -138,16 +138,22 @@ check_repo() {
 
     local count=0
     local target_ref="${remote}/${branch}"
+    local base_ref="${branch}"
+    if ! git -C "${path}" rev-parse --verify "${base_ref}" >/dev/null 2>&1; then
+        base_ref="HEAD"
+    fi
 
     if git -C "${path}" rev-parse --verify "${target_ref}" >/dev/null 2>&1; then
-        count=$(git -C "${path}" rev-list --count "HEAD..${target_ref}" 2>/dev/null || echo 0)
+        if git -C "${path}" merge-base "${base_ref}" "${target_ref}" >/dev/null 2>&1; then
+            count=$(git -C "${path}" rev-list --count "${base_ref}..${target_ref}" 2>/dev/null || echo 0)
+        fi
     fi
 
     if [ "${count}" -gt 0 ]; then
         echo "  - ${name}: [PENDING] ${count} new commit(s) upstream (${target_ref})"
         TOTAL_PENDING_COMMITS=$(( TOTAL_PENDING_COMMITS + count ))
         if [ "${VERBOSE}" = true ]; then
-            git -C "${path}" log "HEAD..${target_ref}" --oneline -n 5 | sed 's/^/      * /'
+            git -C "${path}" log "${base_ref}..${target_ref}" --oneline -n 5 | sed 's/^/      * /'
         fi
     else
         echo "  - ${name}: [UP TO DATE]"
