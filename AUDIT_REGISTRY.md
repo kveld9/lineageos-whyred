@@ -33,6 +33,7 @@ In accordance with `AGENTS.md` Section 13, this registry must be continuously ma
 | **Phase P7 YAKT & thatKernel**| Comparative Evaluation of Community Profiles (YAKT & thatKernel) | `[APPLIED]` | page-cluster=0 accelerates app cold start by -19.2ms (Settings) and -50.2ms (Vivaldi) by eliminating 32KB zRAM decompression readahead; sched_migration_cost_ns=50000 cuts cross-cluster switch latency by -79.7% (76.9us -> 15.6us) at -7.2% compute cost; sched_schedstats=0 falsified (zero gain) | Applied page-cluster=0 and sched_migration_cost_ns=50000 via common rootdir init.qcom.power.rc | `49b08b7` (`sdm660-common`) |
 | **Phase P8 UI & Net Optimization**| System-Level Background Blur Disabling & TCP Idle CWND Preservation | `[APPLIED]` | Background blur disabled in vendor.prop and framework overlay (eliminates Adreno 509 multi-pass Gaussian blur jank); tcp_slow_start_after_idle=0 applied in rootdir power init | Applied ro.surface_flinger.supports_background_blur=0, ro.sf.blurs_are_expensive=1, config_backgroundBlurSupported=false, and tcp_slow_start_after_idle=0 | `6719c31` (`sdm660-common`) |
 | **Gate KERNEL-VAR** | Multi-Variant Kernel Parity: ReSukiSU + SuSFS v2.3.0 Integration | `[PASS]` | Integration and empirical compilation of ReSukiSU v4.2.0 + SuSFS v2.3.0 boot image on clean foundation | In-tree self-contained `drivers/kernelsu`, clean SuSFS v2.3.0 inline hooks, defconfig synced, 5 platform fixes inherited, boot-resukisu.img built (04:35) | `cb3c0da`, `615c3fe`, `5242cb6`, `eaf19fe` (`kernel`) |
+| **Gate KERNEL-UAPI5**| ReSukiSU Kernel Driver UAPI 5 Synchronization & Runtime Validation | `[FIXED]` / `[PASS]` | UAPI mismatch (driver UAPI 4 / 35115 vs manager UAPI 5 / 35203) causing red "Kernel update required" card | Updated driver in-tree to UAPI 5 (`KERNEL_SU_UAPI_VERSION = 5`, `EVENT_SERVICES`), synced `KSU_VERSION := 35203` (v4.2.0-rc3), compiled boot-resukisu.img (08:56), flashed and validated on hardware with zero warnings | `cac5681` (`kernel/xiaomi/sdm660`) |
 
 
 ---
@@ -745,4 +746,36 @@ In accordance with `AGENTS.md` Section 13, this registry must be continuously ma
   - KIO worker `kio-mtp` enumerated the phone volume at `mtp:/Redmi Note 5/Almacenamiento interno compartido`.
   - File transfer verified end-to-end: wrote `/tmp/mtp_test.txt` to `.../Download/mtp_test.txt`, read storage directory, and safely deleted test artifact over MTP.
 * **Verdict**: `[PASS]` / `[FIXED]`. USB MTP file transfer fully operational and persistent across reconnects.
+
+---
+
+### 26. ReSukiSU UAPI 5 Synchronization & Runtime Kernel Validation (Gate KERNEL-UAPI5)
+* **Scope**: Investigation and resolution of the red "Kernel update required" warning banner rendered in the ReSukiSU Manager app (`com.resukisu.resukisu`) on Xiaomi Redmi Note 5 (`whyred` / `df286add`) running LineageOS 21.0.
+* **Observed Behavior & Evidence**:
+  - ReSukiSU Manager app displayed a red warning card: `Kernel update required` above the green status card (`Working Built-in / SuperUser: 1, Modules: 0`).
+  - Device telemetry confirmed:
+    * Kernel driver version: `v4.2.0-in-tree@ReSukiSU (35115/4)` $\rightarrow$ UAPI version 4.
+    * ReSukiSU Manager: `v4.2.0-rc3 (35203/5)` $\rightarrow$ UAPI version 5 (`versionCode=35203`).
+  - Disassembly of Manager APK (`com.resukisu.resukisu`) and upstream verification (`HomePage.kt`, `KernelRepository.kt`, `Natives.kt`):
+    * `isFullFeatured()` checks `kernelUAPIVersion == managerUAPIVersion`. Since `4 != 5`, it evaluated to `false`.
+    * `HomePage.kt` branches to `WarningCard(stringResource(R.string.require_kernel_version_gki))` when `kernelUAPIVersion < managerUAPIVersion`, causing the red card.
+* **Applied Solution & Cross-Variant Parity**:
+  - In `kernel/xiaomi/sdm660` on dedicated branch `lineage-21-resukisu`:
+    1. [`drivers/kernelsu/include/uapi/supercall.h`](file:///home/kveld/Documentos/repos/lineageos-whyred/kernel/xiaomi/sdm660/drivers/kernelsu/include/uapi/supercall.h): Incremented `KERNEL_SU_UAPI_VERSION = 5` and added `DEFINE_KSU_UAPI_CONST(__u32, EVENT_SERVICES, 4)`.
+    2. [`drivers/kernelsu/supercall/dispatch.c`](file:///home/kveld/Documentos/repos/lineageos-whyred/kernel/xiaomi/sdm660/drivers/kernelsu/supercall/dispatch.c): Handled `EVENT_SERVICES` in `do_report_event()` with deduplicated trigger semantics and reset on `EVENT_POST_FS_DATA`.
+    3. [`drivers/kernelsu/Kbuild`](file:///home/kveld/Documentos/repos/lineageos-whyred/kernel/xiaomi/sdm660/drivers/kernelsu/Kbuild): Updated in-tree version parameters to `KSU_LOCAL_VERSION := 4503`, `KSU_VERSION := 35203`, and `KSU_TAG_NAME := v4.2.0-rc3`.
+  - Variant isolation respected: changes strictly isolated to `lineage-21-resukisu` (`feat(resukisu): update driver to UAPI 5 and sync v4.2.0-rc3`, commit `cac56817b8072`).
+* **Empirical Compilation & Hardware Validation**:
+  - Recompiled boot image via `./build_resukisu_boot.sh` (08:56 mm:ss) generating `out/target/product/whyred/boot-resukisu.img` (25MB, SHA-256: `00d9ec9cd64df12cd9707a514b9c0141aa3290f347de636b0e63edc4db072a03`).
+  - Flashed `boot-resukisu.img` to `/dev/block/bootdevice/by-name/boot` (`mmcblk0p58`) and verified exact 1:1 bitwise readback hash (`00d9ec9cd64df12cd9707a514b9c0141aa3290f347de636b0e63edc4db072a03`).
+  - Rebooted device into Android 14 (`sys.boot_completed=1`).
+  - Physical screenshot inspection of ReSukiSU UI confirmed:
+    * Red warning banner completely eliminated.
+    * Kernel driver version: `v4.2.0-rc3-in-tree@ReSukiSU (35203/5)`.
+    * Manager Version: `v4.2.0-rc3 (35203/5)`.
+    * Status: `Working Built-in`, `SuperUser: 1, Modules: 0`.
+    * SuSFS Version: `v2.3.0` operational.
+* **Commits**: `cac56817b8072` (`kernel/xiaomi/sdm660`).
+* **Verdict**: `[PASS]` / `[FIXED]`. ReSukiSU driver UAPI 5 synchronization complete, fully validated on physical hardware with zero warnings.
+
 
