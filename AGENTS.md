@@ -2,7 +2,7 @@
 
 ## 1. Operational Pipeline
 Every authorized modification or fix must strictly execute through the following operational pipeline:
-**Scope Lock → State Inspection → Risk Gate → Minimal Change → Validation → Cross-Variant Gate (Kernel) → Atomic Commit → Push Verification → Documentation Sync**
+**Scope Lock → State Inspection → Risk Gate → Minimal Change → Validation → Cross-Variant Gate (Kernel) → Atomic Commit → Documentation Sync**
 
 ---
 
@@ -96,7 +96,9 @@ Never run any of the following commands without explicit user authorization:
 
 ---
 
-## 8. Commit & Push Standards
+## 8. Commit Standards & Strict No-Push Policy
+- **Mandatory Direct Atomic Commits**: Automatically commit every completed, verified unit of work as soon as it is finished. Do not ask for user permission before committing.
+- **Strict No-Push**: The agent must NEVER execute `git push` or push changes to remotes. Pushing is strictly reserved for manual execution by the user.
 - **Conventional Commits**: Every commit must strictly follow Conventional Commits specification in English (e.g., `fix(kernel): ...`, `build(soong): ...`, `fix(device): ...`, `chore(manifest): ...`, `docs: ...`).
 - **No AI Attribution**: Never include `Co-Authored-By`, assistant identifiers, or any AI generation disclosures in commit messages, pull requests, or repository metadata.
 - **Atomic Commits**: Separate commits strictly by concern and sub-repository. Never combine kernel driver changes with device tree or root orchestration changes.
@@ -107,18 +109,6 @@ Never run any of the following commands without explicit user authorization:
   3. Verify that only intended files are staged.
   4. Run non-compilation validation (syntax checks, lints) when available.
   5. Commit only when the staged diff matches the intended task unit.
-- **Push Verification**:
-  Before pushing:
-  - Verify current branch (`git branch --show-current`).
-  - Verify remote URL (`git remote -v`).
-  - Verify tracking upstream branch.
-  - Check latest commit (`git log -1 --oneline`).
-  - Push only to the verified tracking branch (`main` for root, `lineage-21` / `lineage-21-ksu` / `lineage-21-resukisu` for trees).
-- **Missing Remote Protocol**:
-  If a modified repository lacks the required personal remote (`kveld9/*`):
-  - Stop before pushing.
-  - Report the missing remote to the user.
-  - Request authorization before creating or changing repository remotes.
 
 ---
 
